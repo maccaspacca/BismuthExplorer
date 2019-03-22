@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block content %}
+</head>
+{% include 'nav.html' %}
+	<div class="container">
+		<center><p></p>
+		<h3>Bismuth Rich List</h3>
+		<p style="font-size: 85%"><b>List of all Bismuth addresses with more than {{ bislim|safe }} BIS</b></p>
+		<p style="font-size: 75%">Note: this page may be up to 45 mins behind</p>
+		<p></p>
+		</center>
+		<div align="right">
+		<form method="post" action="/richest">
+		<table style="font-size: 80%">
+		<tr><th><label for="my_curr">Change currency</label></th>
+		<td><select name="my_curr">
+		<option value="BTC">BTC</option>
+		<option value="USD">USD</option>
+		<option value="EUR">EUR</option>
+		<option value="GBP">GBP</option>
+		<option value="CNY">CNY</option>
+		<option value="AUD">AUD</option>
+		</select><th><label for="Submit Query"> </label></th><td><button id="Submit Query" name="Submit Query">Go</button></td></tr>
+		</table>
+		</form>
+		</div>
+	</div>
+	<p></p>
+	<div  class="container">
+	<table style="font-size: 80%" class="table table-striped table-sm">
+	<thead>
+		<tr>
+		<th scope="col" bgcolor="#D0F7C3">Rank</th>
+		<th scope="col" bgcolor="#D0F7C3">Address</th>
+		<th scope="col" bgcolor="#D0F7C3">Alias</th>
+		<th scope="col" bgcolor="#D0F7C3">Balance (BIS)</th>
+		<th scope="col" bgcolor="#D0F7C3">Balance ({{ defcurr|safe }})</th>
+		</tr>
+	</thead>
+	{{ richest|safe }}
+	</table>
+	</div>
+{% endblock %}

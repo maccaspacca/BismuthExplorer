@@ -1,0 +1,8 @@
+Flask
+flask-socketio
+BeautifulSoup4
+gevent
+requests
+pyqrcode
+kafka-python
+configparser

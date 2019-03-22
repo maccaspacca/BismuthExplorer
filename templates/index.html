@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <script type="text/javascript" src="//code.jquery.com/jquery-1.12.4.min.js"></script>
+	<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.3/socket.io.js"></script>
+	<script type="text/javascript" charset="utf-8">
+		$(document).ready(function(){
+		  $('[data-toggle="popover"]').popover();
+		});
+	</script>
+	<script type="text/javascript" charset="utf-8">
+		$(document).ready(function(){
+		  $('[data-toggle="tooltip"]').tooltip();
+		});
+	</script>
+	<script type="text/javascript" charset="utf-8">
+	function copyToClipboard(text){
+		var dummy = document.createElement("input");
+		document.body.appendChild(dummy);
+		dummy.setAttribute('value', text);
+		dummy.select();
+		document.execCommand("copy");
+		document.body.removeChild(dummy);
+	}
+	</script>
+    <script type="text/javascript" charset="utf-8">
+        $(document).ready(function() {
+            // Use a "/test" namespace.
+            // An application can open a connection on multiple namespaces, and
+            // Socket.IO will multiplex all those connections on a single
+            // physical channel. If you don't care about multiple channels, you
+            // can set the namespace to an empty string.
+            namespace = '/test';
+
+            // Connect to the Socket.IO server.
+            // The connection URL has the following format:
+            //     http[s]://<domain>:<port>[/<namespace>]
+            var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port + namespace);
+
+            // Event handler for new connections.
+            // The callback function is invoked when a connection with the
+            // server is established.
+            socket.on('connect', function() {
+                socket.emit('my_connect', {data: 'Connected'});
+            });
+			
+			// Event handler for connection status.
+            socket.on('my_con_status', function(msg) {
+                $('#ct_status').text(msg.data);
+            });
+
+            // Event handler for sent block data.
+            socket.on('my_latest', function(msg) {
+				//if (msg.conf === '1'){
+					//document.getElementById('blheight').style.color = 'green';
+				//}else{
+					//document.getElementById('blheight').style.color = 'red';
+				//}
+                $('#blheight').text(msg.height);
+				$('#blminer').text(msg.miner);
+				$('#bldiff').text(msg.diff);
+				$('#bltime').text(msg.bltime);
+				$('#circbis').html(msg.bcirc + '<b> BIS</b>');
+				$('#totalbis').html(msg.btotal + '<b> BIS</b>');
+				//$('#circ').text(msg.bcirc);
+            });
+			
+            // Event handler for sent status data.
+            socket.on('my_status', function(msg) {
+ 				$('#st1').text(msg.protocolversion);
+				$('#st2').text(msg.walletversion);
+				$('#st3').text(msg.connections);
+				$('#st4').text(msg.uptime);
+				$('#st5').text(msg.consensus_percent);
+				$('#st6').text(msg.consensus);
+            });
+
+            // Event handler for sent information data.
+            socket.on('my_info', function(msg) {
+ 				$('#curr_price').text(msg.btc);
+ 				$('#usd_price').text(msg.usd);
+				$('#fiat_price').text(msg.fiat);
+				$('#sys_mess').text(msg.mess);
+            });
+			
+            // Event handler for sent mempool count.
+            socket.on('my_mem', function(msg) {
+				$('#st7').text(msg.mem);
+            });
+			
+            // Event handler for wallet server count.
+            socket.on('my_w_servers', function(msg) {
+				$('#pop_servers').popover({html: true,placement: 'right',trigger: 'hover',title: 'Active Servers',content: msg.list});
+				$('#a_wallet_s').text(msg.active);
+            });
+		
+            // Event handler for latest 50 transactions
+			socket.on('my_transactions', function(msg) {
+				document.getElementById('txlatest').innerHTML = msg.data;
+                //$('#txlatest').html(msg.data);
+            });
+            // Event handler for server sent data.
+            // The callback function is invoked whenever the server emits data
+            // to the client. The data is then displayed in the "Log"
+            // section of the page.
+            socket.on('my_response', function(msg) {
+                $('#log').html('<b>Message #' + msg.count + ': ' + msg.data + '</b>');
+            });
+        });
+    </script>
+</head>
+{% include 'nav.html' %}
+	<p><center></center></p>
+    <div class="container-fluid">
+      <div class="card-deck mb-3 text-left">
+        <div class="card mb-4 box-shadow">
+          <div class="card-header">
+            <h4 class="my-0 font-weight-normal">Node status: <span id="ct_status">Not Connected</span></h4>
+          </div>
+          <div style="font-size: 80%"  class="card-body">
+            <ul class="list-unstyled mt-3 mb-4">
+              <li><b>Node Protocol: </b><span id="st1">...</span></li>
+              <li><b>Software version: </b><span id="st2">...</span></li>
+              <li><b>Connections: </b><span id="st3">...</span></li>
+              <li><b>Uptime: </b><span id="st4">...</span></li>
+              <li><b>Consensus is at: </b><span id="st5">...</span> %</li>
+              <li><b>Consensus Block: </b><span id="st6">...</span></li>
+              <li><b>Mempool Txs: </b><a class="link" href="/realmem"><span id="st7">...</span></a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="card mb-4 box-shadow">
+          <div class="card-header">
+            <h4 class="my-0 font-weight-normal">Information</h4>
+          </div>
+          <div style="font-size: 80%" class="card-body">
+              <ul class="list-unstyled mt-3 mb-4">
+			  <li><b>Circulating: </b><span id="circbis"></span></li>
+			  <li><b>Total Supply: </b><span id="totalbis"></span></li>
+              <li><b>Price (BTC): </b><span id="curr_price"></span></li>
+              <li><b>Price (USD): </b><span id="usd_price"></span></li>
+              <li><b>Price (EUR): </b><span id="fiat_price"></span></li>
+			  <li><b>Active Wallet Servers: </b><a id="pop_servers" class="link" href="/wservers"><span id="a_wallet_s"></span></a></li>
+			  <li style="color: #ff0000;"><b><span id="sys_mess"></span></b></li>
+            </ul>
+          </div>
+		  <div style="font-size: 80%" class="card-footer text-muted">Prices courtesy of <a class="link" href="https://www.coingecko.com/en/coins/bismuth">CoinGecko</a></div>
+        </div>
+        <div class="card mb-4 box-shadow">
+          <div class="card-header">
+            <h4 class="my-0 font-weight-normal">Latest Block: <span id="blheight">updating...</span></h4>
+          </div>
+          <div style="font-size: 80%" class="card-body">
+            <ul class="list-unstyled mt-3 mb-4">
+              <li><b>Miner: <span id="blminer"></span></b></li>
+ 			  <li><b>Difficulty: </b><span id="bldiff"></span></li>
+			  <li><b>Time found: </b><span id="bltime"></span></li>
+            </ul>
+			<!--<button type="button" class="btn btn-lg btn-block btn-primary">Details</button>-->
+          </div>
+        </div>
+       </div>
+	 </div> 
+	<h3><center>Latest Transactions</center></h3>
+	<div class="container-fluid">
+	<table style="font-size: 70%" class="table table-striped table-sm">
+		<thead>
+			<tr>
+				<th scope="col">Block</th>
+				<th scope="col">Timestamp</th>
+				<th scope="col">From</th>
+				<th scope="col">To</th>
+				<th scope="col">Amount</th>
+				<th scope="col">TX ID</th>
+				<th scope="col">Fee</th>
+				<th scope="col">Reward</th>
+			</tr>
+		</thead>
+		<tbody id="txlatest"></tbody>
+	</table>
+	</div>
+{% endblock %}

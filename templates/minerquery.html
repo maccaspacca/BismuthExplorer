@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block content %}
+</head>
+{% include 'nav.html' %}
+	<div class="container">
+		<center><p></p>
+		<h3>Bismuth Miner Statistics</h3>
+		<p style="font-size: 85%"><b>Hint: Click on an address to see more detail</b></p>
+		<p style="font-size: 75%">Note: this page may be up to 45 mins behind</p>
+		<p style="color:#08750A">{{details|safe}}</p>
+		<p></p>
+		</center>
+	</div>
+	<p></p>
+	<div  class="container">
+	<table style="font-size: 80%" class="table table-striped table-sm">
+	<thead>
+		<tr>
+		<th scope="col" bgcolor="#D0F7C3">Rank</th>
+		<th scope="col" bgcolor="#D0F7C3">Miner</th>
+		<th scope="col" bgcolor="#D0F7C3">Blocks Found</th>
+		</tr>
+	</thead>
+	{{ miners|safe }}
+	</table>
+	</div>
+{% endblock %}

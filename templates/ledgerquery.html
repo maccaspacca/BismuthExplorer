@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block content %}
+</head>
+{% include 'nav.html' %}
+	<div class="container">
+		<center><p></p>
+		<h3>Bismuth Ledger Query Tool</h3>
+		<p>Get a List of Transactions</p>
+		<p style="font-size: 80%">Note: all queries are case sensitive</p></center>
+		<form method="post" action="/ledgerquery">
+		<table style="font-size: 80%" class="table table-sm">
+		<tr><th><label for="block">Enter a Block number, txid, hash, address or a: followed by alias</label></th><td><input type="text" id="block" name="block" size="68"/></td></tr>
+		<tr><th><label for="extra">Speed up older txid queries with a from Address (optional)</label></th><td><input type="text" id="extra" name="extra" size="68"/></td></tr>
+		<tr><th><label for="sdate">Start Date (optional)</label></th><td><input type="date" id="sdate" name="sdate" size="68"/> 00:00:00 hrs</td></tr>
+		<tr><th><label for="fdate">End Date (optional)</label></th><td><input type="date" id="fdate" name="fdate" size="68"/> 23:59:59 hrs</td></tr>
+		<tr><th><label for="Submit Query">Click Submit to List Transactions</label></th><td><button type="submit" class="btn btn-default" id="Submit Query" name="Submit Query">Submit Query</button></td></tr>
+		</table>
+		</form>
+	</div>
+	<div class="container" style="font-size: 80%;text-align:center">
+{{ extext|safe }}
+	</div>
+	<div class="container-fluid">
+{{ starter|safe }}
+	</div>
+{% endblock %}

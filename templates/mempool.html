@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <script type="text/javascript" src="//code.jquery.com/jquery-1.4.2.min.js"></script>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.5/socket.io.min.js"></script>
+	<script type="text/javascript" charset="utf-8">
+		$(document).ready(function(){
+		  $('[data-toggle="popover"]').popover();
+		});
+	</script>
+    <script type="text/javascript" charset="utf-8">
+        $(document).ready(function() {
+            // Use a "/test" namespace.
+            // An application can open a connection on multiple namespaces, and
+            // Socket.IO will multiplex all those connections on a single
+            // physical channel. If you don't care about multiple channels, you
+            // can set the namespace to an empty string.
+            namespace = '/mem';
+
+            // Connect to the Socket.IO server.
+            // The connection URL has the following format:
+            //     http[s]://<domain>:<port>[/<namespace>]
+            var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port + namespace);
+
+            // Event handler for new connections.
+            // The callback function is invoked when a connection with the
+            // server is established.
+            socket.on('connect', function() {
+                socket.emit('mem_connect', {data: 'Connected'});
+            });
+			
+            // Event handler for sent mempool data.
+			socket.on('update', function(msg) {
+				//document.getElementById('mplatest').innerHTML = msg.data;
+				$('#mplatest').html(msg.data);
+            });
+
+        });
+    </script>
+</head>
+{% include 'nav.html' %}
+    <div class="container-fluid">
+	<p><center></center></p>
+	<h3><center>Realtime Bismuth Mempool</center></h3>
+	<h4><center>Local Mempool Data</center></h4>
+	<h5><center><span id="mem_status"></span></center></h5>
+	</div>
+	<table style="font-size: 70%" class="table table-striped table-sm">
+		<thead>
+			<tr>
+				<th scope="col">Timestamp</th>
+				<th scope="col">From</th>
+				<th scope="col">To</th>
+				<th scope="col">Amount</th>
+				<th scope="col">TX ID</th>
+			</tr>
+		</thead>
+		<tbody id="mplatest"></tbody>
+	</table>	  
+{% endblock %}

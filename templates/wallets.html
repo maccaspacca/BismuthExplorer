@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block content %}
+	<script src='static/Chart.min.js'></script>
+</head>
+{% include 'nav.html' %}
+	<div class="container">
+		<center><p></p>
+		<h3>Active Wallet Servers</h3>
+		<p style="font-size: 85%"><b>List of active Bismuth wallet servers</b></p>
+		<p style="font-size: 75%"></p>
+		<p></p>
+		</center>
+	</div>
+		<div class="container-fluid">
+			<div class="row">
+				<div class="col-12">
+					<div class="card center">
+						<div class="card-header">
+							<h5 class="my-0 font-weight-normal">
+							  <a class="btn btn-link" data-toggle="collapse" href="#collapseMe" aria-expanded="false" aria-controls="collapseMe">
+							  {{ ttl }}
+							  </a></h5>
+						</div>
+						<div class="collapse" id="collapseMe">
+						<div class="card-body">
+							<canvas id="myChart" width="800" height="250"></canvas>
+							<p id="caption"></p>
+						</div>
+						</div>
+					</div>
+				</div>
+			 </div>     
+		
+    <script>
+      // Global parameters:
+      // (do not) resize the chart canvas when its container does
+      Chart.defaults.global.responsive = true;
+
+      // define the chart data
+      var chartData = {
+        labels : [{% for item in labels %}
+                   "{{item}}",
+                  {% endfor %}],
+        datasets : [{
+            label: '{{ legend }}',
+            fill: true,
+            lineTension: 0.1,
+            backgroundColor: "rgba(75,192,192,0.4)",
+            borderColor: "rgba(75,192,192,1)",
+            borderCapStyle: 'butt',
+            borderDash: [],
+            borderDashOffset: 0.0,
+            borderJoinStyle: 'miter',
+            pointBorderColor: "rgba(75,192,192,1)",
+            pointBackgroundColor: "#fff",
+            pointBorderWidth: 1,
+            pointHoverRadius: 5,
+            pointHoverBackgroundColor: "rgba(75,192,192,1)",
+            pointHoverBorderColor: "rgba(220,220,220,1)",
+            pointHoverBorderWidth: 2,
+            pointRadius: 1,
+            pointHitRadius: 10,
+            data : [{% for item in values %}
+                      {{item}},
+                    {% endfor %}],
+            spanGaps: false
+        }]
+      }
+	  
+	  var options = {
+	  // All of my other bar chart option here
+		scales: {
+			yAxes: [{
+				ticks: {
+					beginAtZero:true
+				}
+			}]
+		}
+	  }
+
+      // get chart canvas
+      var ctx = document.getElementById("myChart").getContext("2d");
+
+      // create the chart using the chart canvas
+      var myChart = new Chart(ctx, {
+        type: '{{ lt }}',
+        data: chartData,
+		options: options,
+      });
+    </script>
+	<p></p>
+
+	<table style="font-size: 80%" class="table table-striped table-sm">
+	<thead>
+		<tr>
+		<th scope="col" bgcolor="#D0F7C3">Name</th>
+		<th scope="col" bgcolor="#D0F7C3">IP address</th>
+		<th scope="col" bgcolor="#D0F7C3">Port</th>
+		<th scope="col" bgcolor="#D0F7C3">Block height</th>
+		<th scope="col" bgcolor="#D0F7C3">Node version</th>
+		<th scope="col" bgcolor="#D0F7C3">Clients</th>
+		<th scope="col" bgcolor="#D0F7C3">Slots</th>
+		</tr>
+	</thead>
+	{{ wallets|safe }}
+	</table>
+	</div>
+{% endblock %}

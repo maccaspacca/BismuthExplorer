@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block content %}
+</head>
+{% include 'nav.html' %}
+	<div class="container-fluid">
+		<center><p></p>
+		<h3>Bismuth Quick Search Results</h3>
+		<p></p></center>
+	</div>
+	<div class="container-fluid" style="font-size: 100%">
+{{ extext|safe }}
+	</div>
+	<div class="container-fluid">
+{{ starter|safe }}
+	</div>
+{% endblock %}
