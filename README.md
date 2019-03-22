@@ -2,7 +2,7 @@
 
 A Bismuth Cryptocurrency Explorer
 
-This repository contains a web based for the Bismuth Cryptocurrency
+This repository contains a web based explorer application for the Bismuth Cryptocurrency
 
 For license see LICENSE file
 
