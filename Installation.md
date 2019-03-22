@@ -24,7 +24,7 @@ Starting
 
 1. Start your node and let it fully synchronise. This will start producing block, status and other information and will send it to your Kafka server
 2. Run 'toolsdb.py'. On first run this will create a new database called tools.db and fill it with information. Let this fully synchronise.
-3. Run 'bisexplore.py' this will run the Bismuth Explorer itself. If all is well you should now have your explorer instance up and running and ready for access.
+3. Run 'explorebis.py' this will run the Bismuth Explorer itself. If all is well you should now have your explorer instance up and running and ready for access.
 
 601_plugin.ini
 ==============
