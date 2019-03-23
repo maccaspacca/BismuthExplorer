@@ -2,7 +2,7 @@
 
 Bismith Explorer Main Module
 
-Version 0.01 Test
+Version 0.02 Test
 
 """
 from gevent.pywsgi import WSGIServer # Imports the WSGIServer
@@ -603,7 +603,9 @@ def ledger_query():
 				extext = extext + "<p></p>\n"
 			extext = extext + "</form><p></p>\n"
 			
-	if not all[0]:
+	if not all:
+		starter = ""
+	elif not all[0]:
 		starter = ""
 	else:
 			
@@ -1072,15 +1074,17 @@ def search_result():
 			conn.close()
 	
 		if not all:
-			extext = "<p style='color:#C70039'>Block, address, txid or hash not found. Maybe there have been no transactions, you entered bad data, or you entered nothing at all?</p>\n"
+			extext = "<center><p style='color:#C70039'>Block, address, txid or hash not found. Maybe there have been no transactions, you entered bad data, or you entered nothing at all?</p></center>\n"
 		else:
-			extext = "<p style='color:#08750A'><b>Block {} found</b></p>\n".format(myblock)
+			extext = "<center><p style='color:#08750A'><b>Block {} found</b></p></center>\n".format(myblock)
 			
 	if my_type == 3:
 		all = None
-		extext = "<p style='color:#C70039'>Block, address, txid or hash not found. Maybe there have been no transactions, you entered bad data, or you entered nothing at all?</p>\n"
+		extext = "<center><p style='color:#C70039'>Block, address, txid or hash not found. Maybe there have been no transactions, you entered bad data, or you entered nothing at all?</p></center>\n"
 	
-	if not all[0]:
+	if not all:
+		starter = ""
+	elif not all[0]:
 		starter = ""
 	else:
 		view = []
