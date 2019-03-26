@@ -2,7 +2,7 @@
 
 Bismith Explorer Tools DB Module
 
-Version 0.01 Test
+Version 0.03 Test
 
 """
 import sqlite3, time, os, threading, logging, toolsp

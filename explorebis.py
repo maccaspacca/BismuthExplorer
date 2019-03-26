@@ -2,7 +2,7 @@
 
 Bismith Explorer Main Module
 
-Version 0.02 Test
+Version 0.03 Test
 
 """
 from gevent.pywsgi import WSGIServer # Imports the WSGIServer

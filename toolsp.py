@@ -2,7 +2,7 @@
 
 Bismith Explorer Proceedures Module
 
-Version 0.01 Test
+Version 0.03 Test
 
 """
 
@@ -90,6 +90,12 @@ def rev_alias(tocheck):
 		conn.close()
 	except:
 		r_addy = "0"
+		
+	with open('custom.txt', 'r') as infile:
+		for line in infile:
+			cust = line.split(':')
+			if t_addy == cust[0].strip():
+				r_addy = cust[1].strip()
 		
 	return str(r_addy)
 
@@ -336,11 +342,13 @@ def get_alias(address):
 			r_alias = ""
 	except:
 		r_alias = ""
-		
-	if address == "4edadac9093d9326ee4b17f869b14f1a2534f96f9c5d7b48dc9acaed":
-		r_alias = "Test and Development Fund"
-	if address == "8b447aa5845a2b6900589255b7d811a0a40db06b9133dcf9569cdfa0":
-		r_alias = "Cryptopia Exchange"
+	
+	with open('custom.txt', 'r') as infile:
+		for line in infile:
+			cust = line.split(':')
+			if address == cust[1].strip():
+				r_alias = cust[0].strip()
+				#print(r_alias)
 		
 	return r_alias
 
