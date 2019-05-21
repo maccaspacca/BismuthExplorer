@@ -3,7 +3,7 @@ Bismith Explorer Node Plugin
 
 Sends information to explorer kafka instance
 
-Version 0.01 Test
+Version 0.04 Test
 
 """
 
@@ -61,11 +61,18 @@ topic6 = 'wallet_servers'
 
 def get_info():
 
-	time.sleep(60)
+	starting_up = True
 	
-	s = socks.socksocket()
-	s.settimeout(10)
-	s.connect((ip, int(port)))
+	while starting_up:
+		time.sleep(60)
+		
+		try:
+			s = socks.socksocket()
+			s.settimeout(10)
+			s.connect((ip, int(port)))
+			starting_up = False
+		except:
+			starting_up = True
 	
 	count = 0
 	while True:

@@ -2,13 +2,14 @@
 
 Bismith Explorer Proceedures Module
 
-Version 0.03 Test
+Version 0.04 Test
 
 """
 
 import sqlite3, time, json, requests, re
 
 import configparser as cp
+from bs4 import BeautifulSoup
 
 # Read config
 config = cp.ConfigParser()
@@ -257,6 +258,16 @@ def s_test(testString):
 				return True
 	else:
 		return False
+		
+def d_test(testString):
+
+	if len(testString) == 56:
+		if bool(BeautifulSoup(testString,"html.parser").find()):
+			return False
+		else:
+			return True
+	else:
+		return False
 
 def miners():
 
@@ -333,7 +344,7 @@ def get_alias(address):
 		conn = sqlite3.connect('{}index.db'.format(db_root))
 		conn.text_factory = str
 		c = conn.cursor()
-		c.execute("SELECT * FROM aliases WHERE address=? ORDER BY block_height ASC;", (address,))
+		c.execute("SELECT * FROM aliases WHERE address=? ORDER BY block_height DESC;", (address,))
 		r_alias = c.fetchone()[2]
 		c.close()
 		conn.close()
@@ -351,6 +362,23 @@ def get_alias(address):
 				#print(r_alias)
 		
 	return r_alias
+
+	
+def get_tokens(address):
+
+	try:
+		conn = sqlite3.connect('{}index.db'.format(db_root))
+		conn.text_factory = str
+		c = conn.cursor()
+		c.execute("SELECT * FROM tokens WHERE address=? ORDER BY block_height ASC;", (address,))
+		r_tokens = c.fetchall()
+		c.close()
+		conn.close()
+
+	except:
+		r_tokens = None
+
+	return r_tokens
 
 
 def refresh(testAddress,typical):

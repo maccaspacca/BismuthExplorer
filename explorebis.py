@@ -2,7 +2,7 @@
 
 Bismith Explorer Main Module
 
-Version 0.03 Test
+Version 0.04 Test
 
 """
 from gevent.pywsgi import WSGIServer # Imports the WSGIServer
@@ -21,7 +21,7 @@ from logging.handlers import RotatingFileHandler
 
 log_formatter = logging.Formatter('%(asctime)s %(levelname)s %(funcName)s(%(lineno)d) %(message)s')
 logFile = 'explorer.log'
-my_handler = RotatingFileHandler(logFile, mode='a', maxBytes=5 * 1024 * 1024, backupCount=2, encoding=None, delay=0)
+my_handler = RotatingFileHandler(logFile, mode='a', maxBytes=5 * 1024 * 1024, backupCount=2, encoding="UTF-8", delay=0)
 my_handler.setFormatter(log_formatter)
 my_handler.setLevel(logging.INFO)
 app_log = logging.getLogger('root')
@@ -104,6 +104,7 @@ except:
 	app_port = 8080
 
 topia = "8b447aa5845a2b6900589255b7d811a0a40db06b9133dcf9569cdfa0"
+dev_address = "4edadac9093d9326ee4b17f869b14f1a2534f96f9c5d7b48dc9acaed"
 
 # Read config	
 	
@@ -136,7 +137,7 @@ timeout = 2500
 # different async modes, or leave it set to None for the application to choose
 # the best option based on installed packages.
 
-async_mode = "threading"
+async_mode = "gevent"
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = app_secret
@@ -454,7 +455,8 @@ def mempool():
 def ledger_form():
 	starter = ''
 	extext = ''
-	return render_template('ledgerquery.html', starter=starter, extext=extext)
+	valtext = ''
+	return render_template('ledgerquery.html', starter=starter, extext=extext, valtext=valtext)
 	
 @app.route('/ledgerquery', methods=['POST'])
 def ledger_query():
@@ -535,8 +537,10 @@ def ledger_query():
 			conn = sqlite3.connect(bis_root)
 			c = conn.cursor()
 			c.execute("SELECT * FROM transactions WHERE (timestamp BETWEEN ? AND ?) AND (address = ? OR recipient = ?) ORDER BY timestamp DESC;", (l_date,r_date,str(myblock),str(myblock)))
-			
 			temp_all = c.fetchall()
+			
+			if str(myblock) == dev_address:
+				temp_all = [a for a in temp_all if "Development Reward" not in a[2]]
 
 			if mydisplay == 0 or a_display or l_date > 1493640955.47:
 				all = temp_all
@@ -660,8 +664,9 @@ def ledger_query():
 		replot.append('</table>\n')
 		
 		starter = "" + str(''.join(replot))
+		valtext = myblock
 
-	return render_template('ledgerquery.html', starter=starter, extext=extext)
+	return render_template('ledgerquery.html', starter=starter, extext=extext, valtext=valtext)
 	
 @app.route('/richest', methods=['GET', 'POST'])
 def richest_form():
@@ -904,6 +909,12 @@ def detailinfo():
 	except:
 		get_addy = None
 		
+	if toolsp.s_test(get_addy) == False:
+		get_addy = None
+
+	if toolsp.d_test(getdetail) == False:
+		getdetail = None
+		
 	if getdetail:
 	
 		m_detail = toolsp.get_the_details(getdetail,get_addy)
@@ -968,6 +979,44 @@ def apihelp():
 		a_text = " ({} record limit)".format(str(mydisplay))
 	
 	return render_template('apihelp.html', atext=a_text)
+	
+@app.route('/tokens')
+def tokens():
+
+	token_list = toolsp.get_tokens("issued")
+	
+	tview = []
+	
+	for t in token_list:
+	
+		tview.append('<tr>')
+
+		tview.append('<td><b>{}<b></td>'.format(str(t[2])))
+		tview.append('<td>{}</td>'.format(str(t[4])))
+		tview.append('<td>{}</td>'.format(str(t[6])))
+		tview.append('<td>{}</td>'.format(str(t[0])))
+		tview.append('<td>{}</td>'.format(str(t[5])))
+		tview.append('<td>{}'.format(str(time.strftime("%d/%m/%Y at %H:%M:%S", time.gmtime(float(t[1]))))))
+		tview.append('</tr>\n')
+		
+	tplot = []
+	
+	tplot.append('<center><h4>Tokens List</h4></center>')
+	tplot.append('<table style="font-size: 80%" class="table table-striped table-sm">\n')
+	tplot.append('<tr><thead>\n')
+	tplot.append('<th scope="col">Token Name</th>\n')
+	tplot.append('<th scope="col">Issued By</th>\n')
+	tplot.append('<th scope="col">Quantity</th>\n')
+	tplot.append('<th scope="col">Issue Block</th>\n')
+	tplot.append('<th scope="col">txid</th>\n')
+	tplot.append('<th scope="col">Timestamp</th>\n')
+	tplot.append('</thead></tr>\n')
+	tplot = tplot + tview
+	tplot.append('</table>\n')
+		
+	starter = "" + str(''.join(tplot))
+	
+	return render_template('tokens.html', starter=starter)
 	
 @app.route('/search', methods=['GET'])
 def search_result():
@@ -1158,17 +1207,27 @@ def handler(param1, param2):
 		except:
 			response = {"error":"request failed","data":"unable to connect to node - try again later"}
 			return json.dumps(response), 400, {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'}
-		
-		if param2 == "diffget" or param2 == "diffgetjson":
-			connections.send(s, "diffgetjson")
-			response = connections.receive(s)
+	
+		if "balanceget:" in param2 or "balancegetjson:" in param2:
+			arg1 = (param2.split(":")[1]).strip()
+			connections.send(s, "balanceget")
+			connections.send(s, arg1)
+			balanceget_result = connections.receive(s)
 			
+			#if balanceget_result[4] == "0E-8":
+				#balanceget_result[4] = "0"
+			
+			response = {"balance": balanceget_result[0],
+						"credit": balanceget_result[1],
+						"debit": balanceget_result[2],
+						"fees": balanceget_result[3],
+						"rewards": balanceget_result[4],
+						"balance_no_mempool": balanceget_result[5]}
+	
 			return json.dumps(response), 200, {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'}
 		
-		elif "balanceget:" in param2 or "balancegetjson:" in param2:
-			arg1 = param2.split(":")[1]
-			connections.send(s, "balancegetjson")
-			connections.send(s, arg1)
+		elif param2 == "diffget" or param2 == "diffgetjson":
+			connections.send(s, "diffgetjson")
 			response = connections.receive(s)
 			
 			return json.dumps(response), 200, {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'}
@@ -1363,22 +1422,30 @@ def handler(param1, param2):
 			gettxid = gettxid.replace(".","/")
 		
 			m_stuff = "{}".format(str(gettxid))
+
+			if toolsp.d_test(get_txid) == False:
 			
-			m_detail = toolsp.get_the_details(m_stuff,None)
-	
-			
-			if m_detail:
-			
-				y = []
-				y.append({"block":str(m_detail[0]),"timestamp":str(time.strftime("%Y/%m/%d,%H:%M:%S", time.gmtime(float(m_detail[1])))),"from":str(m_detail[2]),"to":str(m_detail[3]),"amount":str(m_detail[4]),"signature":str(m_detail[5]),"txid":str(m_detail[5][:56]),"pubkey":str(m_detail[6]),"hash":str(m_detail[7]),"fee":str(m_detail[8]),"reward":str(m_detail[9]),"operation":str(m_detail[10]),"openfield":str(m_detail[11])})
-				
-				return json.dumps(y), 200, {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'}
-				
-			else:
-				
 				r = "txid does not appear to exist or invalid data"
 				e = {"error":r}
 				return json.dumps(e), 404, {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'}
+
+			else:
+			
+				m_detail = toolsp.get_the_details(m_stuff,None)
+		
+				
+				if m_detail:
+				
+					y = []
+					y.append({"block":str(m_detail[0]),"timestamp":str(time.strftime("%Y/%m/%d,%H:%M:%S", time.gmtime(float(m_detail[1])))),"from":str(m_detail[2]),"to":str(m_detail[3]),"amount":str(m_detail[4]),"signature":str(m_detail[5]),"txid":str(m_detail[5][:56]),"pubkey":str(m_detail[6]),"hash":str(m_detail[7]),"fee":str(m_detail[8]),"reward":str(m_detail[9]),"operation":str(m_detail[10]),"openfield":str(m_detail[11])})
+					
+					return json.dumps(y), 200, {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'}
+					
+				else:
+					
+					r = "txid does not appear to exist or invalid data"
+					e = {"error":r}
+					return json.dumps(e), 404, {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'}
 				
 	elif param1 == "txidadd":
 			gettxid = str(param2)
@@ -1391,20 +1458,28 @@ def handler(param1, param2):
 		
 			m_stuff = "{}".format(str(get_txid))
 			
-			m_detail = toolsp.get_the_details(m_stuff,get_add_from)
-				
-			if m_detail:
+			if toolsp.d_test(get_txid) == False:
 			
-				y = []
-				y.append({"block":str(m_detail[0]),"timestamp":str(time.strftime("%Y/%m/%d,%H:%M:%S", time.gmtime(float(m_detail[1])))),"from":str(m_detail[2]),"to":str(m_detail[3]),"amount":str(m_detail[4]),"signature":str(m_detail[5]),"txid":str(m_detail[5][:56]),"pubkey":str(m_detail[6]),"hash":str(m_detail[7]),"fee":str(m_detail[8]),"reward":str(m_detail[9]),"operation":str(m_detail[10]),"openfield":str(m_detail[11])})
-				
-				return json.dumps(y), 200, {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'}
-				
-			else:
-				
 				r = "txid does not appear to exist or invalid data"
 				e = {"error":r}
 				return json.dumps(e), 404, {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'}
+
+			else:
+			
+				m_detail = toolsp.get_the_details(m_stuff,get_add_from)
+					
+				if m_detail:
+				
+					y = []
+					y.append({"block":str(m_detail[0]),"timestamp":str(time.strftime("%Y/%m/%d,%H:%M:%S", time.gmtime(float(m_detail[1])))),"from":str(m_detail[2]),"to":str(m_detail[3]),"amount":str(m_detail[4]),"signature":str(m_detail[5]),"txid":str(m_detail[5][:56]),"pubkey":str(m_detail[6]),"hash":str(m_detail[7]),"fee":str(m_detail[8]),"reward":str(m_detail[9]),"operation":str(m_detail[10]),"openfield":str(m_detail[11])})
+					
+					return json.dumps(y), 200, {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'}
+					
+				else:
+					
+					r = "txid does not appear to exist or invalid data"
+					e = {"error":r}
+					return json.dumps(e), 404, {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'}
 
 	elif param1 == "richlist":
 		rich_num = str(param2)

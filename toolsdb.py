@@ -2,8 +2,6 @@
 
 Bismith Explorer Tools DB Module
 
-Version 0.03 Test
-
 """
 import sqlite3, time, os, threading, logging, toolsp
 from glob import glob
@@ -11,7 +9,7 @@ from logging.handlers import RotatingFileHandler
 
 log_formatter = logging.Formatter('%(asctime)s %(levelname)s %(funcName)s(%(lineno)d) %(message)s')
 logFile = 'toolsdb.log'
-my_handler = RotatingFileHandler(logFile, mode='a', maxBytes=5 * 1024 * 1024, backupCount=2, encoding=None, delay=0)
+my_handler = RotatingFileHandler(logFile, mode='a', maxBytes=5 * 1024 * 1024, backupCount=2, encoding="UTF-8", delay=0)
 my_handler.setFormatter(log_formatter)
 my_handler.setLevel(logging.INFO)
 app_log = logging.getLogger('root')
