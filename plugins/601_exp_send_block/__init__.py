@@ -1,9 +1,9 @@
 """
-Bismith Explorer Node Plugin
+Bismuth Explorer Node Plugin
 
 Sends information to explorer kafka instance
 
-Version 0.04 Test
+Version 0.05 Test
 
 """
 

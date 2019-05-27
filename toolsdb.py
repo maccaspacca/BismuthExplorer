@@ -1,6 +1,6 @@
 """
 
-Bismith Explorer Tools DB Module
+Bismuth Explorer Tools DB Module
 
 """
 import sqlite3, time, os, threading, logging, toolsp

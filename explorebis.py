@@ -1,8 +1,8 @@
 """
 
-Bismith Explorer Main Module
+Bismuth Explorer Main Module
 
-Version 0.04 Test
+Version 0.05 Test
 
 """
 from gevent.pywsgi import WSGIServer # Imports the WSGIServer
@@ -462,6 +462,8 @@ def ledger_form():
 def ledger_query():
 
 	mylatest = toolsp.latest()
+	
+	valtext = ""
 	
 	a_display = False
 

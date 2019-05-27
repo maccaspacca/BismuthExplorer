@@ -1,8 +1,8 @@
 """
 
-Bismith Explorer Proceedures Module
+Bismuth Explorer Proceedures Module
 
-Version 0.04 Test
+Version 0.05 Test
 
 """
 

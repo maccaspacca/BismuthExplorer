@@ -8,6 +8,13 @@ For license see LICENSE file
 
 For installation see Installation.md
 
+Version 0.0.5 Test 27/05/2019
+-----------------------------
+
+1. Further updates for testing
+2. Bug fixes
+3. Typos
+
 Version 0.0.4 Test 21/05/2019
 -----------------------------
 
