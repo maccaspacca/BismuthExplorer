@@ -8,6 +8,11 @@ For license see LICENSE file
 
 For installation see Installation.md
 
+Version 0.0.6 Test 29/05/2019
+-----------------------------
+
+1. Further updates for testing
+
 Version 0.0.5 Test 27/05/2019
 -----------------------------
 

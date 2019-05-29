@@ -60,7 +60,7 @@
 				$('#blminer').text(msg.miner);
 				$('#bldiff').text(msg.diff);
 				$('#bltime').text(msg.bltime);
-				$('#toast_mess').text('A new block has been found');
+				$('#toast_mess').text('The local node has seen a new block');
 				$('.toast').toast({animation: true, delay: 5000});
 				$('.toast').toast('show');
 				$('#circbis').html(msg.bcirc + '<b> BIS</b>');
@@ -115,6 +115,15 @@
 {% include 'nav.html' %}
 	<p><center></center></p>
     <div class="container-fluid">
+	<table class="table mt-0 mb-0">
+	<tr>
+	  <td><button type="button" class="btn btn-outline-dark mb-3 btn-sm" data-toggle="collapse" data-target="#info">Toggle Information</button></td>
+	  <td><div class="toast mt-0 mb-0">
+		<div class="toast-body">
+		  <span id="toast_mess"></span>
+		</div>
+	  </div></td></tr></table>
+	  <div id="info" class="collapse">
       <div class="card-deck mb-3 text-left">
         <div class="card mb-4 box-shadow">
           <div class="card-header">
@@ -159,6 +168,7 @@
  			  <li><b>Difficulty: </b><span id="bldiff">updating...</span></li>
 			  <li><b>Time found: </b><span id="bltime">updating...</span></li>
             </ul>
+			<!--
 			  <div class="toast mt-2">
 				<div class="toast-header">
 				  <b>Node Information</b>
@@ -167,10 +177,12 @@
 				  <span id="toast_mess"></span>
 				</div>
 			  </div>
+			-->
 			<!--<button type="button" class="btn btn-lg btn-block btn-primary">Details</button>-->
           </div>
         </div>
        </div>
+	   </div>
 	 </div> 
 	<div class="container-fluid mt-0">
 	<h4><center>Latest Transactions</center></h4>

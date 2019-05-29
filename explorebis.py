@@ -2,7 +2,7 @@
 
 Bismuth Explorer Main Module
 
-Version 0.05 Test
+Version 0.06 Test
 
 """
 from gevent.pywsgi import WSGIServer # Imports the WSGIServer
@@ -224,7 +224,7 @@ def get_50():
 		r_to = str(r[3]) # to address
 		a_from = toolsp.get_alias(r_from) # alias from
 		if r_from == r_to:
-			a_to = a_from # alias of recipent is same a sender
+			a_to = a_from # alias of recipient is same a sender
 		else:
 			a_to = toolsp.get_alias(r_to) # get alias of recipient
 			
@@ -278,7 +278,13 @@ def mem_html(b):
 	print("TXs in mempool: " + str(len(b)))
 	for response in b:
 		address = response['address']
+		m_alias = toolsp.get_alias(address)
+		if m_alias != "":
+			address = m_alias
 		recipient = response['recipient']
+		m_alias = toolsp.get_alias(recipient)
+		if m_alias != "":
+			recipient = m_alias
 		amount = response['amount']
 		txid = response['signature'][:56]
 		
