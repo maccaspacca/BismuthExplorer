@@ -2,6 +2,8 @@
 
 Bismuth Explorer Tools DB Module
 
+Version 1.00
+
 """
 import sqlite3, time, os, threading, logging, toolsp
 from glob import glob

@@ -2,11 +2,11 @@
 
 Bismuth Explorer Proceedures Module
 
-Version 0.05 Test
+Version 1.00
 
 """
 
-import sqlite3, time, json, requests, re
+import sqlite3, time, json, requests, re, socks, connections
 
 import configparser as cp
 from bs4 import BeautifulSoup
@@ -27,6 +27,14 @@ try:
 	hyper_root = config.get('My Explorer', 'hyperroot')
 except:
 	hyper_root = "static/hyper.db"
+try:
+	ip = config.get('My Explorer', 'nodeip')
+except:
+	ip = "127.0.0.1"
+try:
+	port = config.get('My Explorer', 'nodeport')
+except:
+	port = "5658"
 
 db_hyper = True
 
@@ -236,8 +244,14 @@ def get_the_details(getdetail, get_addy):
 
 def test(testString):
 
-	if len(testString) == 56:
-		if (re.search('[abcdef]',testString)):
+	if testString.isalnum() == True:
+		s = socks.socksocket()
+		s.settimeout(10)
+		s.connect((ip, int(port)))
+		connections.send(s, "addvalidate")
+		connections.send(s, testString)
+		validate_result = connections.receive(s)
+		if validate_result == "valid":
 			test_result = 1
 		else:
 			test_result = 3
@@ -252,10 +266,18 @@ def test(testString):
 	
 def s_test(testString):
 
-	if testString.isalnum():
-		if (re.search('[abcdef]',testString)):
-			if len(testString) == 56:
-				return True
+	if testString.isalnum() == True:
+		s = socks.socksocket()
+		s.settimeout(10)
+		s.connect((ip, int(port)))
+		connections.send(s, "addvalidate")
+		connections.send(s, testString)
+		validate_result = connections.receive(s)
+		
+		if validate_result == "valid":
+			return True
+		else:
+			return False
 	else:
 		return False
 		
