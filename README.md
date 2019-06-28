@@ -25,6 +25,11 @@ Future Planned Changes
 2. Hypernode information
 3. Removal of direct node database queries
 
+Version 1.0.1 28/06/2019
+-----------------------------
+
+1. API and txid bug fixes
+
 Version 1.0.0 26/06/2019
 -----------------------------
 

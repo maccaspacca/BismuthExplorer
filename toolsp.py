@@ -2,7 +2,7 @@
 
 Bismuth Explorer Proceedures Module
 
-Version 1.00
+Version 1.0.1
 
 """
 
@@ -244,6 +244,11 @@ def get_the_details(getdetail, get_addy):
 
 def test(testString):
 
+	test_result = 3
+
+	if len(testString) == 56:
+		test_result = 1
+
 	if testString.isalnum() == True:
 		s = socks.socksocket()
 		s.settimeout(10)
@@ -253,13 +258,9 @@ def test(testString):
 		validate_result = connections.receive(s)
 		if validate_result == "valid":
 			test_result = 1
-		else:
-			test_result = 3
 
-	elif testString.isdigit() == True:
+	if testString.isdigit() == True:
 		test_result = 2
-	else:
-		test_result = 3
 	
 	#print(test_result)
 	return test_result

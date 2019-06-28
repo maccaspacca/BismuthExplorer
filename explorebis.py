@@ -2,7 +2,7 @@
 
 Bismuth Explorer Main Module
 
-Version 1.00
+Version 1.0.1
 
 """
 from gevent.pywsgi import WSGIServer # Imports the WSGIServer
@@ -1428,10 +1428,10 @@ def handler(param1, param2):
 	elif param1 == "txid":
 			gettxid = str(param2)
 			
-			gettxid = gettxid.replace(".","/")
+			get_txid = gettxid.replace(".","/")
 		
-			m_stuff = "{}".format(str(gettxid))
-
+			m_stuff = "{}".format(str(get_txid))
+			
 			if toolsp.d_test(get_txid) == False:
 			
 				r = "txid does not appear to exist or invalid data"
@@ -1446,7 +1446,7 @@ def handler(param1, param2):
 				if m_detail:
 				
 					y = []
-					y.append({"block":str(m_detail[0]),"timestamp":str(time.strftime("%Y/%m/%d,%H:%M:%S", time.gmtime(float(m_detail[1])))),"from":str(m_detail[2]),"to":str(m_detail[3]),"amount":str(m_detail[4]),"signature":str(m_detail[5]),"txid":str(m_detail[5][:56]),"pubkey":str(m_detail[6]),"hash":str(m_detail[7]),"fee":str(m_detail[8]),"reward":str(m_detail[9]),"operation":str(m_detail[10]),"openfield":str(m_detail[11])})
+					y.append({"block":str(m_detail[0]),"timestamp":str(m_detail[1]),"from":str(m_detail[2]),"to":str(m_detail[3]),"amount":str(m_detail[4]),"signature":str(m_detail[5]),"txid":str(m_detail[5][:56]),"pubkey":str(m_detail[6]),"hash":str(m_detail[7]),"fee":str(m_detail[8]),"reward":str(m_detail[9]),"operation":str(m_detail[10]),"openfield":str(m_detail[11])})
 					
 					return json.dumps(y), 200, {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'}
 					
@@ -1480,7 +1480,7 @@ def handler(param1, param2):
 				if m_detail:
 				
 					y = []
-					y.append({"block":str(m_detail[0]),"timestamp":str(time.strftime("%Y/%m/%d,%H:%M:%S", time.gmtime(float(m_detail[1])))),"from":str(m_detail[2]),"to":str(m_detail[3]),"amount":str(m_detail[4]),"signature":str(m_detail[5]),"txid":str(m_detail[5][:56]),"pubkey":str(m_detail[6]),"hash":str(m_detail[7]),"fee":str(m_detail[8]),"reward":str(m_detail[9]),"operation":str(m_detail[10]),"openfield":str(m_detail[11])})
+					y.append({"block":str(m_detail[0]),"timestamp":str(m_detail[1]),"from":str(m_detail[2]),"to":str(m_detail[3]),"amount":str(m_detail[4]),"signature":str(m_detail[5]),"txid":str(m_detail[5][:56]),"pubkey":str(m_detail[6]),"hash":str(m_detail[7]),"fee":str(m_detail[8]),"reward":str(m_detail[9]),"operation":str(m_detail[10]),"openfield":str(m_detail[11])})
 					
 					return json.dumps(y), 200, {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'}
 					
