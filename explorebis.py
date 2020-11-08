@@ -2,7 +2,7 @@
 
 Bismuth Explorer Main Module
 
-Version 1.0.1
+Version 2.0.0
 
 """
 from gevent.pywsgi import WSGIServer # Imports the WSGIServer
@@ -19,15 +19,6 @@ from flask_socketio import SocketIO, emit, join_room, leave_room, \
 
 from logging.handlers import RotatingFileHandler
 
-log_formatter = logging.Formatter('%(asctime)s %(levelname)s %(funcName)s(%(lineno)d) %(message)s')
-logFile = 'explorer.log'
-my_handler = RotatingFileHandler(logFile, mode='a', maxBytes=5 * 1024 * 1024, backupCount=2, encoding="UTF-8", delay=0)
-my_handler.setFormatter(log_formatter)
-my_handler.setLevel(logging.INFO)
-app_log = logging.getLogger('root')
-app_log.setLevel(logging.INFO)
-app_log.addHandler(my_handler)
-
 import configparser as cp
 
 # Read config
@@ -35,13 +26,9 @@ config = cp.ConfigParser()
 config.readfp(open(r'explorer.ini'))
 
 try:
-	kafkahost = config.get('My Explorer', 'kafkahost')
+	alt_curr = config.get('My Explorer', 'altcurrency')
 except:
-	kafkahost = "127.0.0.1"
-try:
-	kafkaport = config.get('My Explorer', 'kafkaport')
-except:
-	kafkaport = "9092"
+	alt_curr = "GBP"
 try:
 	ip = config.get('My Explorer', 'nodeip')
 except:
@@ -102,50 +89,74 @@ try:
 	app_port = int(config.get('My Explorer', 'webport'))
 except:
 	app_port = 8080
+try:
+	l_level = config.get('My Explorer', 'logging')
+	if l_level.lower() == "warning":
+		log_level = logging.WARNING
+	if l_level.lower() == "info":
+		log_level = logging.INFO
+	else:
+		log_level = logging.WARNING
+except:
+	log_level = logging.INFO
+	
+try:
+	dev_get = config.get('My Explorer', 'devmode')
+	if dev_get.lower() == "true":
+		dev_state = True
+		log_level = logging.INFO
+	else:
+		dev_state = False
+except:
+	dev_state = True
+
+log_formatter = logging.Formatter('%(asctime)s %(levelname)s %(funcName)s(%(lineno)d) %(message)s')
+logFile = 'explorer.log'
+my_handler = RotatingFileHandler(logFile, mode='a', maxBytes=5 * 1024 * 1024, backupCount=2, encoding="UTF-8", delay=0)
+my_handler.setFormatter(log_formatter)
+app_log = logging.getLogger('root')
+app_log.setLevel(log_level)
+app_log.addHandler(my_handler)
+
+consoleHandler = logging.StreamHandler()
+consoleHandler.setFormatter(log_formatter)
+consoleHandler.setLevel(log_level)
+app_log.addHandler(consoleHandler)
 
 topia = "8b447aa5845a2b6900589255b7d811a0a40db06b9133dcf9569cdfa0"
 dev_address = "4edadac9093d9326ee4b17f869b14f1a2534f96f9c5d7b48dc9acaed"
 
-# Read config	
-	
-from kafka import KafkaConsumer, SimpleProducer, KafkaClient
- 
-KAFKA_TOPIC1 = 'blocks'
-KAFKA_TOPIC2 = 'status'
-KAFKA_TOPIC3 = 'mempool'
-KAFKA_TOPIC4 = 'cmc'
-KAFKA_TOPIC5 = 'mpgetjson'
-KAFKA_TOPIC6 = 'wallet_servers'
+vip_mess = ""
+do_cmc_once = False
 
-KAFKA_BROKERS = '{}:{}'.format(kafkahost,kafkaport)
- 
-consumer1 = KafkaConsumer(KAFKA_TOPIC1, bootstrap_servers=KAFKA_BROKERS)
-consumer2 = KafkaConsumer(KAFKA_TOPIC2, bootstrap_servers=KAFKA_BROKERS)
-consumer3 = KafkaConsumer(KAFKA_TOPIC3, bootstrap_servers=KAFKA_BROKERS)
-consumer4 = KafkaConsumer(KAFKA_TOPIC4, bootstrap_servers=KAFKA_BROKERS)
-consumer5 = KafkaConsumer(KAFKA_TOPIC5, bootstrap_servers=KAFKA_BROKERS)
-consumer6 = KafkaConsumer(KAFKA_TOPIC6, bootstrap_servers=KAFKA_BROKERS)
+app_log.info("Config and logging done")
 
-kafka = KafkaClient(KAFKA_BROKERS)
-producer = SimpleProducer(kafka)
+# Read config
 
-cmc_vals = toolsp.get_cmc_val()
+try:
+	with open('price_info.txt') as json_file:
+		cmc_vals = json.load(json_file)
+		app_log.info("Price information loaded")
+except:
+	cmc_vals = {"BTC": 0.001e-05, "USD": 0.01, "EUR": 0.01, "GBP": 0.01, "CNY": 0.01, "AUD": 0.01}
+	app_log.error("price_info.txt has an issue or is missing.... I will try to fix")
+	with open('price_info.txt', 'w') as outfile:
+		json.dump(cmc_vals, outfile)
 
-timeout = 2500
 
 # Set this variable to "threading", "eventlet" or "gevent" to test the
 # different async modes, or leave it set to None for the application to choose
 # the best option based on installed packages.
 
 async_mode = "gevent"
+app_log.info("Async mode is: {}".format(async_mode))
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = app_secret
 socketio = SocketIO(app, async_mode=async_mode)
 thread = None
+cmc_thread = None
 thread_lock = Lock()
-
-workerObject = None
 
 db_hyper = False
 
@@ -154,70 +165,18 @@ if os.path.isfile('{}hyper.db'.format(db_root)):
 	hyper_root = '{}hyper.db'.format(db_root)
 else:
 	hyper_root = bis_root # just in case
-	
-		
-def get_cmc_info(alt_curr):
-
-	ch = alt_curr.lower()
-
-	try:
-		t = "https://api.coingecko.com/api/v3/coins/bismuth?localization=false&tickers=false&market_data=true&community_data=false&developer_data=false"
-		r = requests.get(t)
-		x = r.text
-		y = json.loads(x)
-		
-		try:
-			c_btc = "{:.8f}".format(float(y['market_data']['current_price']['btc']))
-			c_usd = "{:.3f}".format(float(y['market_data']['current_price']['usd']))
-			c_cus = "{:.3f}".format(float(y['market_data']['current_price'][ch]))
-			socketio.emit('my_info',{'btc': c_btc, 'usd': c_usd, 'fiat': c_cus, 'mess': ''},namespace='/test',broadcast=True)
-		except:
-			socketio.emit('my_info',{'btc': '0.0', 'usd': '0.0', 'fiat': '0.0', 'mess': ''},namespace='/test',broadcast=True)
-	
-	except requests.exceptions.RequestException as e:
-		socketio.emit('my_info',{'btc': '0.0', 'usd': '0.0', 'fiat': '0.0', 'mess': ''},namespace='/test',broadcast=True)
-		print(e)
-		
-def get_wallet_servers():
-
-	try:
-
-		rep = requests.get("http://api.bismuth.live/servers/wallet/legacy.json")
-		if rep.status_code == 200:
-			wallets = rep.json()
-							
-		x = sorted([wallet for wallet in wallets if wallet['active']], key=lambda k: (k['clients']+1)/(k['total_slots']+2))
-		#print(x)
-		
-		live_x = ""
-		
-		for live_ones in x:
-			live_x = live_x + "<p>{}</p>".format(live_ones['label'])
-		
-		w_num = len(x)
-		
-	except:
-		w_num = '0'
-		
-	socketio.emit('my_w_servers',{'active': str(w_num),'list': live_x},namespace='/test',broadcast=True)
-	
-	return x
 
 	
 def get_50():
 
 	txlist50 = ''
+	arg1 = "50"
+	
+	try:
+		myall = toolsp.get_one_arg("listlim",arg1)
+	except:
+		myall = [[0,0.0,'','',0,'','','',0,0.0,'',''],]
 
-	conn = sqlite3.connect(bis_root)
-	conn.text_factory = str
-	c = conn.cursor()
-	c.execute("SELECT * FROM transactions ORDER BY timestamp DESC LIMIT 100;")
-	un_all = c.fetchall()
-	
-	sor_all = sorted(un_all, key=lambda tup: abs(tup[0]), reverse=True)
-	
-	myall = sor_all[:49]
-	
 	for r in myall:
 	
 		r_from = str(r[2]) # from address
@@ -268,32 +227,269 @@ def get_50():
 			txlist50 = txlist50 + '<tr><th scope="row"><a href="{}">{}</a></th>\n'.format(det_link,str(r[0]))
 		txlist50 = txlist50 + '<td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>'.format(tx_tm,a_from,a_to,str(float(r[4])),a_sig,str(float(r[8])),str(float(r[9])))
 
-	c.close()
-	conn.close()
 	return txlist50
-	
-def mem_html(b):
 
-	send_back = ""
-	print("TXs in mempool: " + str(len(b)))
-	for response in b:
-		address = response['address']
-		m_alias = toolsp.get_alias(address)
-		if m_alias != "":
-			address = m_alias
-		recipient = response['recipient']
-		m_alias = toolsp.get_alias(recipient)
-		if m_alias != "":
-			recipient = m_alias
-		amount = response['amount']
-		txid = response['signature'][:56]
+
+def cmc_alt(message):
+
+	with open('dump_cmc.txt') as json_file:
+		x = json.load(json_file)
+		socketio.emit('my_info',{'btc': x['btc'], 'usd': x['usd'], 'fiat': x['fiat'], 'toc': x['toc'], 'mess': message},namespace='/test',broadcast=True)
+
+	try:
+		with open('price_info.txt') as json_file:
+			cmc_vals = json.load(json_file)
+			app_log.info("price_info.txt has been read")
+	except:
+		cmc_vals = {"BTC": 0.001e-05, "USD": 0.01, "EUR": 0.01, "GBP": 0.01, "CNY": 0.01, "AUD": 0.01}
+		app_log.error("price_info.txt has an issue or is missing")
 		
-		timestamp = str(time.strftime("%H:%M:%S, %d/%m/%Y", time.gmtime(float(response['timestamp']))))
-	
-		send_back = send_back + '<tr><th scope="row"> {} </th>\n'.format(timestamp)
-		send_back = send_back + '<td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>'.format(address,recipient,amount,txid)
+	return cmc_vals
 
-	return send_back
+		
+def get_cmc_info(alt_curr, testmess, mystate, this_dev_state):
+
+	ch = alt_curr.lower()
+	c_btc = c_usd = c_cus = '0.0'
+	r_cmc_vals = None
+	
+	if mystate:
+	
+		try:
+			t = "https://api.coingecko.com/api/v3/coins/bismuth?localization=false&tickers=false&market_data=true&community_data=false&developer_data=false"
+			r = requests.get(t)
+			x = r.text
+			y = json.loads(x)
+			
+			try:
+				c_btc = "{:.8f}".format(float(y['market_data']['current_price']['btc']))
+				c_usd = "{:.3f}".format(float(y['market_data']['current_price']['usd']))
+				c_cus = "{:.3f}".format(float(y['market_data']['current_price'][ch]))
+				app_log.info("Coingecko Price Thread: Updated OK")
+				socketio.emit('my_info',{'btc': c_btc, 'usd': c_usd, 'fiat': c_cus, 'toc': alt_curr, 'mess': testmess},namespace='/test',broadcast=True)
+				cmc = {'btc': c_btc, 'usd': c_usd, 'fiat': c_cus, 'toc': alt_curr, 'mess': testmess}
+				
+				with open('dump_cmc.txt', 'w') as outfile:
+					json.dump(cmc, outfile)
+					
+				r_cmc_vals = toolsp.get_cmc_val(y)
+
+				with open('price_info.txt', 'w') as outfile:
+					json.dump(r_cmc_vals, outfile)
+					
+			except:
+				app_log.error("Coingecko Price Thread: NOK")
+				r_cmc_vals = cmc_alt(testmess)
+		
+		except requests.exceptions.RequestException as e:
+			app_log.error("Coingecko Price Thread: Error {}".format(e))
+			r_cmc_vals = cmc_alt(testmess)
+	
+	else:
+	
+		r_cmc_vals = cmc_alt(testmess)
+		
+		if this_dev_state:
+			app_log.warning("Coingecko Price Thread: Dev Mode")
+		else:
+			app_log.info("Coingecko Price Thread: Read from file")
+
+	return r_cmc_vals
+
+		
+def get_status_info():
+
+	try:
+
+		st = toolsp.get_no_arg("statusjson")
+		
+		w_uptime = st['uptime']
+		n_up = toolsp.display_time(int(w_uptime),4)
+		st['uptime'] = n_up
+		socketio.emit('my_status',st,namespace='/test',broadcast=True)
+		app_log.info("Status Thread: OK")
+	
+	except requests.exceptions.RequestException as e:
+		w_uptime = "0"
+		n_up = toolsp.display_time(int(w_uptime),4)
+		st['uptime'] = n_up
+		socketio.emit('my_status',st,namespace='/test',broadcast=True)
+		app_log.error("Status Thread: Error {}".format(e))
+
+		
+def get_block_info(last_block):
+
+	try:
+		
+		b = toolsp.get_no_arg("blocklastjson")
+						
+		blheight = b['block_height']
+		
+		if blheight == last_block:
+			app_log.info("Block Thread: Looking For New Block")
+			r_block = last_block
+		else:
+			d = toolsp.get_no_arg("difflastjson")
+			time_now = str(time.time())
+			bltimestamp = b['timestamp']
+			bltm = str(time.strftime("%H:%M:%S on %d/%m/%Y", time.gmtime(float(bltimestamp))))
+			rawminer = b['recipient']
+			blminer = toolsp.get_alias(rawminer)
+			if blminer == "":
+				blminer = rawminer
+			bldiff = d['difficulty']
+			x = toolsp.getcirc()
+			socketio.emit('my_latest',{'height': blheight, 'miner': blminer, 'diff': bldiff, 'bltime': bltm, 'btotal': x[0], 'bcirc': x[1]},namespace='/test',broadcast=True)
+			app_log.info("Block Thread: New Block Seen {}".format(blheight))
+			r_block = blheight
+	
+	except requests.exceptions.RequestException as e:
+		app_log.error("Block Thread: Error {}".format(e))
+		r_block = last_block
+
+	return r_block
+
+	
+def get_message_info():
+
+	n_ann = False
+	c_toast = ""
+	
+	try:
+		
+		ann = toolsp.get_no_arg("annget")
+		
+		if ann != "No announcement":
+			n_ann = True
+			c_toast = "Dev Team Announcement: {}".format(ann)
+			socketio.emit("my_toast", {"c_toast": c_toast}, namespace="/test", broadcast=True)
+			app_log.warning(c_toast)
+		else:
+			app_log.info("No Announcements")
+		
+	except requests.exceptions.RequestException as e:
+		app_log.error("Message Thread: Error {}".format(e))
+
+	with open('message.txt') as json_file:
+		m = json.load(json_file)
+		my_code = m['secret']
+		
+		if my_code == app_secret:
+			if n_ann:
+				this_message = c_toast
+			else:
+				this_message = m['message']
+			app_log.info("Message Checked: Code Good")
+		else:
+			this_message = ""
+			app_log.error("Message Checked: Code Bad")
+	
+	if dev_state:
+		this_message = "DEV MODE | {}".format(this_message)
+
+	return this_message
+
+	
+def get_wallet_servers():
+
+	live_x = ""
+
+	try:
+	
+		x = toolsp.xws()
+		
+		live_x = ""
+		
+		for live_ones in x:
+			live_x = live_x + "<p>{}</p>".format(live_ones['label'])
+		
+		w_num = len(x)
+		
+	except:
+		w_num = '0'
+		
+	socketio.emit('my_w_servers',{'active': str(w_num),'list': live_x},namespace='/test',broadcast=True)
+	app_log.info("Wallet Servers Checked")
+	
+	return x
+
+	
+def get_mem_tx_no():
+
+	try:
+		mempool = toolsp.get_no_arg("mpgetjson")
+		num_tx = str(len(mempool))
+		app_log.info("Number of mempool transactions checked")
+	except:
+		num_tx = "0"
+		mempool = []
+		app_log.warning("Error checking mempool transactions")
+	
+	socketio.emit('my_mem',{'mem': num_tx},namespace='/test',broadcast=True)
+
+	if len(mempool) != 0:
+		c_toast = "There are {} transactions in local mempool".format(num_tx)
+		mem_list = toolsp.mem_html(mempool)
+		socketio.emit("update", {"data": mem_list}, namespace="/mem", broadcast=True)
+		socketio.emit("my_toast", {"c_toast": c_toast}, namespace="/test", broadcast=True)
+		#print(c_toast)
+	else:
+		b = ""
+		c_toast = "Nothing in the local mempool"
+		mem_list = toolsp.mem_html(b)
+		socketio.emit("update", {"data": mem_list}, namespace="/mem", broadcast=True)
+		#socketio.emit("my_toast", {"c_toast": c_toast}, namespace="/test", broadcast=True)
+		#print(c_toast)
+	
+	app_log.info(c_toast)
+
+
+def main_info():
+	# Rename to something better
+	# Better timings
+
+	global cmc_vals
+	count = 0
+	current_block = "1"
+	last_block = "0"
+	global txlist50
+
+	while True:
+
+		if count % 60 == 0: # check every 10 mins or so
+			vip_mess = get_message_info()
+			if dev_state:
+				cmc_vals = get_cmc_info(alt_curr,vip_mess,False,dev_state)
+			else:
+				cmc_vals = get_cmc_info(alt_curr,vip_mess,True,dev_state)
+			
+		else:
+			vip_mess = get_message_info()
+			cmc_vals = get_cmc_info(alt_curr,vip_mess,False,dev_state)
+			
+		if count == 0 or count % 12 == 0:
+			x = get_wallet_servers()
+			
+		get_status_info()
+		get_mem_tx_no()
+		current_block = get_block_info(current_block)
+						
+		# Refresh tx list
+		if current_block != last_block:
+			txlist50 = get_50()
+			socketio.emit('my_transactions', {'data': txlist50},namespace='/test',broadcast=True)
+			app_log.info("Transaction List Refreshed")
+			last_block = current_block
+		else:
+			app_log.info("No new transactions")
+	
+		if count == 299: # Prevent counting forever
+			count = 0
+		else:
+			count += 1
+		
+		time.sleep(10)
+
 	
 def rich_html(a,c):
 
@@ -318,144 +514,18 @@ def rich_html(a,c):
 
 	return send_back
 
-	
-def background_thread():
-		
-	global cmc_vals
-	go_fer_it = True
-	cmc_vals = toolsp.get_cmc_val()
-	count = 0
-	
-	while True:
-		#socketio.sleep(5)
-		partitions = consumer2.poll(timeout)
-		if len(partitions) > 0:
-			go_fer_it = True
-			for p in partitions:
-				for response in partitions[p]:
-					m = response.value
-					s = json.loads(m.decode('utf-8'))
-					w_uptime = s['uptime']
-					n_up = toolsp.display_time(int(w_uptime),4)
-					s['uptime'] = n_up
-					socketio.emit('my_status',s,namespace='/test',broadcast=True)
-
-		partitions = consumer1.poll(timeout)
-		if len(partitions) > 0:			
-			for p in partitions:
-				for response in partitions[p]:
-					m = response.value
-					b = json.loads(m.decode('utf-8'))
-					time_now = str(time.time())
-					bltimestamp = b['timestamp']
-					bltm = str(time.strftime("%H:%M:%S on %d/%m/%Y", time.gmtime(float(bltimestamp))))
-					blheight = b['height']
-					rawminer = b['miner']
-					blminer = toolsp.get_alias(rawminer)
-					if blminer == "":
-						blminer = rawminer
-					bldiff = b['diff']
-					x = toolsp.getcirc()
-					socketio.emit('my_latest',{'height': blheight, 'miner': blminer, 'diff': bldiff, 'bltime': bltm, 'btotal': x[0], 'bcirc': x[1]},namespace='/test',broadcast=True)
-
-		partitions = consumer3.poll(timeout)
-		if len(partitions) > 0:			
-			for p in partitions:
-				for response in partitions[p]:
-					m = (response.value).decode('utf-8')
-					if not m:
-						m = "0"
-					socketio.emit('my_mem',{'mem': m,},namespace='/test',broadcast=True)
-		else:
-			m = "0"
-			socketio.emit('my_mem',{'mem': m,},namespace='/test',broadcast=True)
-					
-		partitions = consumer4.poll(timeout)
-		if len(partitions) > 0:			
-			for p in partitions:
-				for response in partitions[p]:
-					c = response.value
-					x = json.loads(c.decode('utf-8'))
-					socketio.emit('my_info',{'btc': x['btc'], 'usd': x['usd'], 'fiat': x['fiat'], 'mess': ''},namespace='/test',broadcast=True)
-					
-		partitions = consumer6.poll(timeout)
-		if len(partitions) > 0:			
-			for p in partitions:
-				for response in partitions[p]:
-					c = response.value
-					x = json.loads(c.decode('utf-8'))
-					
-					live_x = ""
-					
-					for live_ones in x:
-						live_x = live_x + "<p>{}</p>".format(live_ones['label'])
-					
-					w_num = len(x)
-					socketio.emit('my_w_servers',{'active': str(w_num),'list': live_x},namespace='/test',broadcast=True)
-
-		if go_fer_it:
-			txlist50 = get_50()
-			#print(txlist50)
-			socketio.emit('my_transactions', {'data': txlist50},namespace='/test',broadcast=True)
-			go_fer_it = False
-		count += 1
-		if count % 18 == 0:
-			cmc_vals = toolsp.get_cmc_val()
-			
-		#print("Main thread is working")
-		socketio.sleep(5)
-
-#//////////////////////////
-class Worker(object):
-
-	switch = False
-	
-	def __init__(self, socketio):
-		"""
-		assign socketio object to emit
-		"""
-		self.socketio = socketio
-		self.switch = True
-
-	def do_work(self,my_id):
-		"""
-		do work and emit message
-		"""
-		self.mysid = my_id
-		t_list = ""
-		while self.switch:
-		
-			partitions = consumer5.poll(10000)
-			if len(partitions) > 0:			
-				for p in partitions:
-					for response in partitions[p]:
-						m = response.value
-						b = json.loads(m.decode('utf-8'))
-						mem_list = mem_html(b)
-						self.socketio.emit("update", {"data": mem_list}, namespace="/mem")
-			
-			#else:
-				#self.socketio.emit("update", {"data": ""}, namespace="/mem")
-
-			print("mempool worker {} is working".format(self.mysid))
-			#self.socketio.sleep(12)
-
-	def stop(self):
-		"""
-		stop the loop
-		"""
-		print("Stopping worker for mempool")
-		self.switch = False
 		
 #//////////////////
 
 @app.route('/')
 def index():
 	return render_template('index.html')
+
 	
 @app.route('/realmem')
 def mempool():
 	return render_template('mempool.html')
+
 	
 @app.route('/ledgerquery', methods=['GET'])
 def ledger_form():
@@ -463,6 +533,7 @@ def ledger_form():
 	extext = ''
 	valtext = ''
 	return render_template('ledgerquery.html', starter=starter, extext=extext, valtext=valtext)
+
 	
 @app.route('/ledgerquery', methods=['POST'])
 def ledger_query():
@@ -512,23 +583,23 @@ def ledger_query():
 	myblock = myblock.strip()
 	
 	if "f:" in myblock:
-		a_display = True
+		a_display = True # to display all transactions regardless of limit (undocumented)
 		myblock = myblock.split(":")[1]
 		#print(myblock)
 		#print(a_display)
 	
 	if "a:" in myblock:
-		myblock = toolsp.rev_alias(myblock)
+		myblock = toolsp.rev_alias(myblock) # address from alias
 	
-	my_type = toolsp.test(myblock)
+	my_type = toolsp.test(myblock) # test the data - is it an address, block or error.
 	
 	if my_type == 3:
 		myblock = "0"
 		my_type = 2
 	
-	if my_type == 1:
+	if my_type == 1: # an address
 		
-		myxtions = toolsp.refresh(myblock,1)
+		myxtions = toolsp.refresh(myblock,1) 
 		#print(myxtions)
 		
 		if float(myxtions[0]) or float(myxtions[2]) > 0:
@@ -542,6 +613,16 @@ def ledger_query():
 			extext = extext + "<p style='color:#08750A'><b>ADDRESS FOUND | Credits: {} | Debits: {} | Rewards: {} |".format(myxtions[0],myxtions[1],myxtions[2])
 			extext = extext + " Fees: {} | BALANCE: {}</b></p>".format(myxtions[3],myxtions[4])
 			
+			#s = socks.socksocket()
+			#s.settimeout(10)
+			#s.connect((ip, int(port)))
+			#connections.send(s, "addlist", 10)
+			#connections.send(s, myblock)
+			#dump_all = connections.receive(s, 10)
+			#s.close()
+			
+			#temp_all = [d for d in dump_all if l_date <= d[1] <= r_date]
+		
 			conn = sqlite3.connect(bis_root)
 			c = conn.cursor()
 			c.execute("SELECT * FROM transactions WHERE (timestamp BETWEEN ? AND ?) AND (address = ? OR recipient = ?) ORDER BY timestamp DESC;", (l_date,r_date,str(myblock),str(myblock)))
@@ -563,23 +644,38 @@ def ledger_query():
 		
 		else:
 
-			conn = sqlite3.connect(bis_root)
-			c = conn.cursor()
-			c.execute("SELECT * FROM transactions WHERE block_hash = ?;", (str(myblock),))
-
-			all = c.fetchall()
-			
-			c.close()
-			conn.close()
-		
-			if not all:
+			dump_all = toolsp.get_one_arg("api_getblockfromhash",myblock)
 				
-				all = [toolsp.get_the_details(str(myblock),f_addy)]
+			try:
+				hash_block = list(dump_all.keys())[0]
+				
+				all = toolsp.get_one_arg("blockget",hash_block)
+				
+				extext = "<center><p style='color:#08750A'><b>Transaction(s) found for the hash you entered</b></p><center>"
+				
+			except:
+				all = None
+
+			if not all:
+			
+				try:
+					
+					all = [toolsp.get_two_arg("api_gettransaction",str(myblock),False)]
+
+					#print(all)
+					
+					extext = "<center><p style='color:#08750A'><b>Transaction found for the txid you entered</b></p><center>"
+					
+				except:
+					all = None
+				
+				#all = [toolsp.get_the_details(str(myblock),f_addy)] # get transactions for signature
+				#print(all)
 				
 			if not all[0]:				
 				extext = "<center><p style='color:#C70039'>Nothing found for the block, address, txid or hash you entered - perhaps no transactions have been made?</p></center>"
-			else:
-				extext = "<center><p style='color:#08750A'><b>Transaction found for the txid you entered</b></p><center>"
+			#else:
+				#extext = "<center><p style='color:#08750A'><b>Transaction found for the txid you entered</b></p><center>"
 	
 	if my_type == 2:
 	
@@ -589,14 +685,12 @@ def ledger_query():
 		
 		else:
 		
-			conn = sqlite3.connect(bis_root)
-			c = conn.cursor()
-			c.execute("SELECT * FROM transactions WHERE block_height = ?;", (myblock,))
-
-			all = c.fetchall()
-		
-			c.close()
-			conn.close()
+			try:
+				
+				all = toolsp.get_one_arg("blockget",myblock)
+				
+			except:
+				all = None
 	
 		if not all:
 			extext = "<p style='color:#C70039'>Block, address, txid or hash not found. Maybe there have been no transactions, you entered bad data, or you entered nothing at all?</p>\n"
@@ -625,8 +719,11 @@ def ledger_query():
 		i = 0
 		for x in all:
 				
-			if bool(BeautifulSoup(str(x[11]),"html.parser").find()):
-				x_open = "HTML NOT SHOWN HERE"
+			if not "http" in str(x[11]):
+				if bool(BeautifulSoup(str(x[11]),"html.parser").find()):
+					x_open = "HTML NOT SHOWN HERE"
+				else:
+					x_open = str(x[11][:20])
 			else:
 				x_open = str(x[11][:20])
 			
@@ -675,10 +772,13 @@ def ledger_query():
 		valtext = myblock
 
 	return render_template('ledgerquery.html', starter=starter, extext=extext, valtext=valtext)
+
 	
 @app.route('/richest', methods=['GET', 'POST'])
 def richest_form():
 
+	#print(cmc_vals)
+	
 	try:
 		def_curr = request.form.get('my_curr')
 	except:
@@ -750,6 +850,7 @@ def minerquery():
 	
 	return render_template('minerquery.html', miners=send_back, details=addressis)
 
+
 @app.route('/wservers', methods=['GET'])
 def wallet_servers():
 
@@ -792,6 +893,7 @@ def b_chart():
 	#print(d)
 
 	return render_template('chart.html', values=d, labels=b, legend=legend, ttl=ttl, lt=lt)
+
 	
 @app.route('/diff_chart')
 def d_chart():
@@ -817,6 +919,7 @@ def d_chart():
 	legend = 'Difficulty'
 
 	return render_template('chart.html', values=d, labels=b, legend=legend, ttl=ttl, lt=lt)
+
 	
 @app.route('/geturl', methods=['GET'])
 def url_form():
@@ -824,6 +927,7 @@ def url_form():
 	plotter = []
 	
 	return render_template('bisurl.html', starter="")
+
 	
 @app.route('/geturl', methods=['POST'])
 def url_gen():
@@ -904,7 +1008,8 @@ def url_gen():
 	starter = "" + str(''.join(plotter))
 	
 	return render_template('bisurl.html', starter=starter, my_add=my_add, my_amount=my_amount, my_op=my_op, my_mess=my_mess)
-	
+
+
 @app.route('/details')
 def detailinfo():
 
@@ -979,6 +1084,7 @@ def detailinfo():
 		
 	return render_template('detail.html', ablock=d_block, atime=d_time, afrom=d_from, ato=d_to, aamount=d_amount, asig=d_sig, atxid=d_txid, apub=d_pub, ahash=d_hash, afee=d_fee, areward=d_reward, aoperation=d_operation, aopen=d_open)
 
+
 @app.route('/apihelp')
 def apihelp():
 
@@ -988,6 +1094,7 @@ def apihelp():
 		a_text = " ({} record limit)".format(str(mydisplay))
 	
 	return render_template('apihelp.html', atext=a_text)
+
 	
 @app.route('/tokens')
 def tokens():
@@ -1000,24 +1107,24 @@ def tokens():
 	
 		tview.append('<tr>')
 
-		tview.append('<td><b>{}<b></td>'.format(str(t[2])))
-		tview.append('<td>{}</td>'.format(str(t[4])))
+		tview.append("<td><b><a href='/tokenquery?token={}'>{}</a><b></td>".format(str(t[2]),str(t[2])))
+		tview.append("<td><a href='tokentxquery?address={}'>{}</a></td>".format(str(t[4]),str(t[4])))
 		tview.append('<td>{}</td>'.format(str(t[6])))
 		tview.append('<td>{}</td>'.format(str(t[0])))
 		tview.append('<td>{}</td>'.format(str(t[5])))
-		tview.append('<td>{}'.format(str(time.strftime("%d/%m/%Y at %H:%M:%S", time.gmtime(float(t[1]))))))
+		tview.append('<td>{}</td>'.format(str(time.strftime("%d/%m/%Y at %H:%M:%S", time.gmtime(float(t[1]))))))
 		tview.append('</tr>\n')
 		
 	tplot = []
 	
-	tplot.append('<center><h4>Tokens List</h4></center>')
+	tplot.append('<center><h4>List of Issued Tokens</h4></center>')
 	tplot.append('<table style="font-size: 80%" class="table table-striped table-sm">\n')
 	tplot.append('<tr><thead>\n')
 	tplot.append('<th scope="col">Token Name</th>\n')
 	tplot.append('<th scope="col">Issued By</th>\n')
 	tplot.append('<th scope="col">Quantity</th>\n')
 	tplot.append('<th scope="col">Issue Block</th>\n')
-	tplot.append('<th scope="col">txid</th>\n')
+	tplot.append('<th scope="col">TXID</th>\n')
 	tplot.append('<th scope="col">Timestamp</th>\n')
 	tplot.append('</thead></tr>\n')
 	tplot = tplot + tview
@@ -1026,7 +1133,128 @@ def tokens():
 	starter = "" + str(''.join(tplot))
 	
 	return render_template('tokens.html', starter=starter)
+
+
+@app.route('/tokenquery')
+def tokenquery():
+
+	try:
+		this_token = request.args.get('token')
+	except:
+		this_token = None
+		
+	if this_token:
+
+		query_list = toolsp.query_token(this_token)
+		
+	else:
+		
+		query_list = []
+		
+	#print(query_list)
 	
+	tview = []
+		
+	for t in query_list:
+	
+		tview.append('<tr>')
+
+		tview.append("<td><b><a href='search?quicksearch={}'>{}</a><b></td>".format(str(t[0]),str(t[0])))
+		tview.append('<td>{}</td>'.format(str(time.strftime("%d/%m/%Y at %H:%M:%S", time.gmtime(float(t[1]))))))
+		if str(t[3]) == "issued":
+			tview.append("<td>{}</td>".format(str(t[3])))
+		else:
+			tview.append("<td><a href='tokentxquery?address={}'>{}</a></td>".format(str(t[3]),str(t[3])))
+		tview.append("<td><a href='tokentxquery?address={}'>{}</a></td>".format(str(t[4]),str(t[4])))
+		tview.append('<td>{}</td>'.format(str(t[6])))
+		tview.append('<td>{}</td>'.format(str(t[5])))
+		tview.append('</tr>\n')
+		
+	tplot = []
+	
+	tplot.append('<center><h4>{} - List of Transactions</h4></center>'.format(this_token))
+	tplot.append('<table style="font-size: 80%" class="table table-striped table-sm">\n')
+	tplot.append('<tr><thead>\n')
+	tplot.append('<th scope="col">Block</th>\n')
+	tplot.append('<th scope="col">Date</th>\n')
+	tplot.append('<th scope="col">From</th>\n')
+	tplot.append('<th scope="col">To</th>\n')
+	tplot.append('<th scope="col">Amount</th>\n')
+	tplot.append('<th scope="col">TXID</th>\n')
+	tplot.append('</thead></tr>\n')
+	tplot = tplot + tview
+	tplot.append('</table>\n')
+		
+	starter = "" + str(''.join(tplot))
+	
+	return render_template('tokenquery.html', starter=starter)
+
+
+@app.route('/tokentxquery')
+def tokentxquery():
+
+	try:
+		this_tkaddy = request.args.get('address')
+	except:
+		this_tkaddy = None
+		
+	if this_tkaddy:
+
+		txquery_list = toolsp.query_tkaddy(this_tkaddy)
+		
+	else:
+		
+		txquery_list = []
+		
+	#print(txquery_list)
+	
+	tview = []
+		
+	for t in txquery_list:
+	
+		if this_tkaddy == str(t[3]):
+			txcolor = "#FF0000"
+			dude = t[6] * -1
+		if this_tkaddy == str(t[4]):
+			txcolor = "#008000"
+			dude = t[6]
+		if this_tkaddy == "issued":
+			txcolor = "#008000"
+			dude = t[6]
+		
+		tview.append('<tr>')
+
+		tview.append("<td><b><a href='tokenquery?token={}'>{}</a><b></td>".format(str(t[2]),str(t[2])))
+		tview.append("<td><a href='search?quicksearch={}'>{}</a></td>".format(str(t[0]),str(t[0])))
+		tview.append('<td>{}</td>'.format(str(time.strftime("%d/%m/%Y at %H:%M:%S", time.gmtime(float(t[1]))))))
+		if str(t[3]) == "issued":
+			tview.append("<td>{}</td>".format(str(t[3])))
+		else:
+			tview.append("<td><a href='tokentxquery?address={}'>{}</a></td>".format(str(t[3]),str(t[3])))
+		tview.append("<td><a href='tokentxquery?address={}'>{}</a></td>".format(str(t[4]),str(t[4])))
+		tview.append('<td style="color:{}">{}</td>'.format(txcolor,str(dude)))
+		tview.append('</tr>\n')
+		
+	tplot = []
+	
+	tplot.append('<center><h5>Address: {}</h5></center>'.format(this_tkaddy))
+	tplot.append('<table style="font-size: 80%" class="table table-striped table-sm">\n')
+	tplot.append('<tr><thead>\n')
+	tplot.append('<th scope="col">Token</th>\n')
+	tplot.append('<th scope="col">Block</th>\n')
+	tplot.append('<th scope="col">Date</th>\n')
+	tplot.append('<th scope="col">From</th>\n')
+	tplot.append('<th scope="col">To</th>\n')
+	tplot.append('<th scope="col">Amount</th>\n')
+	tplot.append('</thead></tr>\n')
+	tplot = tplot + tview
+	tplot.append('</table>\n')
+		
+	starter = "" + str(''.join(tplot))
+	
+	return render_template('tokentxquery.html', starter=starter)
+
+
 @app.route('/search', methods=['GET'])
 def search_result():
 
@@ -1203,74 +1431,90 @@ def search_result():
 		starter = "" + str(''.join(replot))
 	
 	return render_template('search.html', starter=starter, extext=extext)
+
 	
 @app.route('/api/<param1>/<param2>', methods=['GET'])
 def handler(param1, param2):
 
 	if param1 == "node":
+		failed_response = {"error":"request failed","data":"unable to connect to node - try again later"}
 
 		try:
 			s = socks.socksocket()
 			s.settimeout(10)
 			s.connect((ip, int(port)))
 		except:
-			response = {"error":"request failed","data":"unable to connect to node - try again later"}
+			response = failed_response
 			return json.dumps(response), 400, {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'}
 	
+		#balance
 		if "balanceget:" in param2 or "balancegetjson:" in param2:
 			arg1 = (param2.split(":")[1]).strip()
-			connections.send(s, "balanceget")
-			connections.send(s, arg1)
-			balanceget_result = connections.receive(s)
 			
-			#if balanceget_result[4] == "0E-8":
-				#balanceget_result[4] = "0"
-			
-			response = {"balance": balanceget_result[0],
-						"credit": balanceget_result[1],
-						"debit": balanceget_result[2],
-						"fees": balanceget_result[3],
-						"rewards": balanceget_result[4],
-						"balance_no_mempool": balanceget_result[5]}
-	
-			return json.dumps(response), 200, {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'}
+			try:
+				response = toolsp.get_one_arg("balancegetjson",arg1)	
+				return json.dumps(response), 200, {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'}
+			except:
+				response = failed_response			
+				return json.dumps(response), 400, {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'}
 		
+		#difficulty
 		elif param2 == "diffget" or param2 == "diffgetjson":
-			connections.send(s, "diffgetjson")
-			response = connections.receive(s)
-			
-			return json.dumps(response), 200, {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'}
+		
+			try:
+				response = toolsp.get_no_arg("diffgetjson")
+				return json.dumps(response), 200, {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'}
+			except:
+				response = failed_response			
+				return json.dumps(response), 400, {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'}				
 			
 		elif param2 == "difflast" or param2 == "difflastjson":
-			connections.send(s, "difflastjson")
-			response = connections.receive(s)
-	
-			return json.dumps(response), 200, {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'}
 			
+			try:
+				response = toolsp.get_no_arg("difflastjson")	
+				return json.dumps(response), 200, {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'}
+			except:
+				response = failed_response			
+				return json.dumps(response), 400, {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'}
+		
+		#mempool
 		elif param2 == "mpget" or param2 == "mpgetjson":
-			connections.send(s, "mpgetjson")
-			mems = connections.receive(s)
-			if len(mems) == 0:
-				response = {"mempool":"empty"}
-			else:
-				response = mems
 			
-			return json.dumps(response), 200, {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'}
+			try:
+				mems = toolsp.get_no_arg("mpgetjson")
+				
+				if len(mems) == 0:
+					response = {"mempool":"empty"}
+				else:
+					response = mems
+				
+				return json.dumps(response), 200, {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'}
+			except:
+				response = failed_response			
+				return json.dumps(response), 400, {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'}
 			
+		#lastblock
 		elif param2 == "blocklast" or param2 == "blocklastjson":
-			connections.send(s, "blocklastjson")
-			response = connections.receive(s)
-	
-			return json.dumps(response), 200, {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'}
 			
+			try:
+				response = toolsp.get_no_arg("blocklastjson")
+				return json.dumps(response), 200, {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'}
+			except:
+				response = failed_response			
+				return json.dumps(response), 400, {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'}
+			
+		#get specific block
 		elif "blockget:" in param2 or "blockgetjson:" in param2:
 			arg1 = param2.split(":")[1]
-			connections.send(s, "blockgetjson")
-			connections.send(s, arg1)
-			response = connections.receive(s)
 			
-			return json.dumps(response), 200, {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'}
-			
+			try:
+				response = toolsp.get_one_arg("blockgetjson",arg1)
+				return json.dumps(response), 200, {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'}
+			except:
+				response = failed_response			
+				return json.dumps(response), 400, {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'}
+		
+		#transactions for an address
 		elif "addlistlim:" in param2 or "addlistlimjson:" in param2:
 			arg_list = param2.split(":")
 			arg1 = arg_list[1]
@@ -1278,14 +1522,15 @@ def handler(param1, param2):
 			
 			if int(arg2) > txlistlim:
 				arg2 = str(txlistlim)
-			
-			connections.send(s, "addlistlimjson")
-			connections.send(s, arg1)
-			connections.send(s, arg2)
-			response = connections.receive(s)
-			
-			return json.dumps(response), 200, {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'}
-			
+		
+			try:
+				response = toolsp.get_two_arg("addlistlimjson",arg1,arg2)
+				return json.dumps(response), 200, {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'}
+			except:
+				response = failed_response			
+				return json.dumps(response), 400, {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'}
+		
+		#list of last x transactions
 		elif "listlim:" in param2 or "listlimjson:" in param2:
 			arg_list = param2.split(":")
 			arg1 = arg_list[1]
@@ -1293,58 +1538,103 @@ def handler(param1, param2):
 			if int(arg1) > txlistlim:
 				arg1 = str(txlistlim)
 			
-			connections.send(s, "listlimjson")
-			connections.send(s, arg1)
-			response = connections.receive(s)
-			
-			return json.dumps(response), 200, {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'}
-			
+			try:
+				response = toolsp.get_one_arg("listlimjson",arg1)
+				return json.dumps(response), 200, {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'}
+			except:
+				response = failed_response			
+				return json.dumps(response), 400, {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'}
+		
+		#get alias for address
 		elif "aliasget:" in param2:
 			arg1 = param2.split(":")[1]
-			connections.send(s, "aliasget")
-			connections.send(s, arg1)
-			add_all = connections.receive(s)
-		
-			response = {"address": arg1,
-						"alias": add_all[0][0]}
-				
-			return json.dumps(response), 200, {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'}
 			
+			try:
+				add_all = toolsp.get_one_arg("aliasget",arg1)
+				add_all = add_all[0][0]
+				
+				with open('custom.txt', 'r') as infile:
+					for line in infile:
+						cust = line.split(':')
+						if arg1 == cust[1].strip():
+							add_all = cust[0].strip()
+							#print(r_alias)
+			
+				response = {"address": arg1,
+							"alias": add_all}
+					
+				return json.dumps(response), 200, {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'}
+			except:
+				response = failed_response			
+				return json.dumps(response), 400, {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'}
+			
+		#address from alias
 		elif "addfromalias:" in param2:
 
 			arg1 = param2.split(":")[1]
-			connections.send(s, "addfromalias")
-			connections.send(s, arg1)
-			add_all = connections.receive(s)
-
-			response = {"alias": arg1,
-						"address": add_all}
-				
-			return json.dumps(response), 200, {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'}
 			
+			try:
+				add_all = toolsp.get_one_arg("addfromalias",arg1)
+				
+				with open('custom.txt', 'r') as infile:
+					for line in infile:
+						cust = line.split(':')
+						if arg1 == cust[0].strip():
+							add_all = cust[1].strip()
+
+				response = {"alias": arg1,
+							"address": add_all}
+					
+				return json.dumps(response), 200, {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'}
+			except:	
+				response = failed_response			
+				return json.dumps(response), 400, {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'}
+			
+		#validate an address
 		elif "addvalidate:" in param2:
 
 			arg1 = param2.split(":")[1]
-			connections.send(s, "addvalidate")
-			connections.send(s, arg1)
-			val_result = connections.receive(s)
 			
-			response = {"address": arg1,
-						"status": val_result}
+			try:
+				val_result = toolsp.get_one_arg("addvalidate",arg1)
 				
-			return json.dumps(response), 200, {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'}
+				response = {"address": arg1,
+							"status": val_result}
+					
+				return json.dumps(response), 200, {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'}
+			except:
+				response = failed_response			
+				return json.dumps(response), 400, {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'}
 		
+		#get node peers
 		elif param2 == "peersget":
-			connections.send(s, "peersget")
-			response = connections.receive(s)
-				
-			return json.dumps(response), 200, {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'}
+		
+			try:			
+				response = toolsp.get_no_arg("peersget")
+				return json.dumps(response), 200, {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'}
+			except:
+				response = failed_response			
+				return json.dumps(response), 400, {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'}
 			
-		elif param2 == "statusget":
-			connections.send(s, "statusget")
-			response = connections.receive(s)
-				
-			return json.dumps(response), 200, {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'}
+		#get node status
+		elif param2 == "statusget" or param2 == "statusjson":
+
+			try:
+				response = toolsp.get_no_arg("statusjson")
+				return json.dumps(response), 200, {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'}
+			except:
+				response = failed_response			
+				return json.dumps(response), 400, {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'}
+
+		#get network announcement
+		elif param2 == "annget":
+			
+			try:
+				response = toolsp.get_no_arg("annget")
+				return json.dumps(response), 200, {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'}
+			except:
+				response = failed_response			
+				return json.dumps(response), 400, {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'}
 			
 		else:
 			r = "invalid request"
@@ -1356,6 +1646,9 @@ def handler(param1, param2):
 		if param2 == "coinsupply":
 			x = toolsp.getcirc()
 			return json.dumps({'circulating':str(x[1]),'total':str(x[0])}), 200, {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'}
+		if param2 == "wservers":
+			w = toolsp.xws()
+			return json.dumps(w), 200, {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'}
 			
 	elif param1 == "getall":
 		getaddress = str(param2)
@@ -1598,6 +1891,8 @@ def handler(param1, param2):
 		r = "invalid request"
 		e = {"error":r}
 		return json.dumps(e), 400, {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'}
+		
+	s.close()
 
 
 @socketio.on('my_event', namespace='/test')
@@ -1606,13 +1901,10 @@ def test_message(message):
 	emit('my_response',
 		 {'data': message['data'], 'count': session['receive_count']})
 
+
 @socketio.on('my_connect', namespace='/test')
 def test_con_status(message):
 	emit('my_con_status',{'data': message['data']})
-	get_cmc_info('EUR')
-	x = get_wallet_servers()
-	txlist50 = get_50()
-	emit('my_transactions', {'data': txlist50},namespace='/test')
 
 
 @socketio.on('my_broadcast_event', namespace='/test')
@@ -1673,46 +1965,50 @@ def ping_pong():
 
 @socketio.on('connect', namespace='/test')
 def test_connect():
-	global thread
+	global cmc_thread
+	get_status_info()
+
 	with thread_lock:
-		if thread is None:
-			thread = socketio.start_background_task(background_thread)
-	#emit('my_response', {'data': 'Connected', 'count': 0})
-	
+		if cmc_thread is None:
+			cmc_thread = socketio.start_background_task(target=main_info)
+			app_log.info("New Connection, New Thread {}".format(request.sid))
+		else:
+			with open('dump_cmc.txt') as json_file:
+				x = json.load(json_file)
+				emit('my_info',{'btc': x['btc'], 'usd': x['usd'], 'fiat': x['fiat'], 'toc': x['toc'], 'mess': x['mess']},namespace='/test',broadcast=True)
+			app_log.info("New Connection {}".format(request.sid))
+			x = get_wallet_servers()
+			
+			emit('my_transactions', {'data': txlist50},namespace='/test')
+
 
 @socketio.on('disconnect', namespace='/test')
 def test_disconnect():
-	print('Client disconnected', request.sid)
+	app_log.info('Home Page client disconnected {}'.format(request.sid))
+
 	
 @socketio.on('disconnect', namespace='/mem')
 def mem_disconnect():
-	worker.stop()
-	print('Mempool client disconnected', request.sid)
+	app_log.info('Mempool client disconnected {}'.format(request.sid))
+
 	
 @socketio.on('connect', namespace='/mem')
 def mem_connect():
 	"""
 	connect
 	"""
-
-	global worker
-	new_id = request.sid
-	worker = Worker(socketio)
-	socketio.start_background_task(worker.do_work,new_id)
+	get_mem_tx_no()
+	app_log.info('Mempool client connected {}'.format(request.sid))
+	
 	
 if __name__ == '__main__':
 
 	LISTEN = ('0.0.0.0',app_port)
 	
 	if dossl:
-		http_server = WSGIServer( LISTEN, app, keyfile=key_path, certfile=crt_path )
+		http_server = WSGIServer( LISTEN, app, keyfile=key_path, certfile=crt_path, log = None )
 	else:
-		http_server = WSGIServer( LISTEN, app )
+		http_server = WSGIServer( LISTEN, app, log = None )
 		
 	http_server.serve_forever()
-	
-	#if dossl:
-		#context = (crt_path, key_path)
-		#socketio.run(app, host='0.0.0.0', port=app_port, ssl_context=context, debug=False)
-	#else:
-		#socketio.run(app, host='0.0.0.0', port=app_port, debug=False)
+# ends

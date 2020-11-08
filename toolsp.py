@@ -2,7 +2,7 @@
 
 Bismuth Explorer Proceedures Module
 
-Version 1.0.1
+Version 2.0.0
 
 """
 
@@ -37,6 +37,42 @@ except:
 	port = "5658"
 
 db_hyper = True
+
+def get_one_arg(gcom,arg1):
+
+	s = socks.socksocket()
+	s.settimeout(10)
+	s.connect((ip, int(port)))
+	connections.send(s, gcom, 10)
+	connections.send(s, arg1)
+	response = connections.receive(s, 10)
+	s.close()
+
+	return response
+	
+def get_two_arg(gcom,arg1,arg2):
+
+	s = socks.socksocket()
+	s.settimeout(10)
+	s.connect((ip, int(port)))
+	connections.send(s, gcom, 10)
+	connections.send(s, arg1)
+	connections.send(s, arg2)
+	response = connections.receive(s, 10)
+	s.close()
+
+	return response
+	
+def get_no_arg(gcom):
+
+	s = socks.socksocket()
+	s.settimeout(10)
+	s.connect((ip, int(port)))
+	connections.send(s, gcom, 10)
+	response = connections.receive(s, 10)
+	s.close()
+
+	return response
 
 def getcirc():
 
@@ -82,21 +118,15 @@ def rev_alias(tocheck):
 
 	a_addy = tocheck.split(":")
 	t_addy = str(a_addy[1])
-
-	try:
-		conn = sqlite3.connect('{}index.db'.format(db_root))
-		conn.text_factory = str
-		c = conn.cursor()
-		c.execute("SELECT * FROM aliases WHERE alias=? ORDER BY block_height ASC;", (t_addy,))
-		d_addy = c.fetchone()
 	
-		if d_addy:
-			r_addy = d_addy[1]
+	try:
+		rev_alias = get_one_arg("addfromalias",t_addy)
+		
+		if rev_alias:
+			r_addy = rev_alias
 		else:
 			r_addy = "0"
-
-		c.close()
-		conn.close()
+		
 	except:
 		r_addy = "0"
 		
@@ -106,6 +136,7 @@ def rev_alias(tocheck):
 			if t_addy == cust[0].strip():
 				r_addy = cust[1].strip()
 		
+	#print(r_addy)
 	return str(r_addy)
 
 def display_time(seconds, granularity=2):
@@ -131,14 +162,9 @@ def display_time(seconds, granularity=2):
 
 def latest():
 
-	conn = sqlite3.connect(bis_root)
-	conn.text_factory = str
-	c = conn.cursor()
-	c.execute("SELECT * FROM transactions WHERE reward != 0 ORDER BY block_height DESC LIMIT 1;")
-	block_get = c.fetchall()[0]
+	block_get = get_no_arg("blocklast")
 	
-	c.execute("SELECT difficulty FROM misc WHERE block_height = ?;", (block_get[0],))
-	diff = c.fetchall()[0]
+	diff = get_no_arg("difflast")
 	
 	db_block_height = str(block_get[0])
 	db_timestamp_last = block_get[1]
@@ -149,10 +175,7 @@ def latest():
 	time_now = str(time.time())
 	last_block_ago = (float(time_now) - float(db_timestamp_last))#/60
 	#last_block_ago = '%.2f' % last_block_ago
-	diff_block_previous = diff[0]
-	
-	c.close()
-	conn.close()
+	diff_block_previous = diff[1]
 
 	return db_block_height, last_block_ago, diff_block_previous, db_block_finder, db_timestamp_last, db_block_hash, db_block_open, db_block_txid
 
@@ -219,26 +242,30 @@ def get_the_details(getdetail, get_addy):
 				m_detail = x_detail[0]
 				
 			else:
-				conn = sqlite3.connect(bis_root)
-				conn.text_factory = str
-				c = conn.cursor()
-				c.execute("PRAGMA case_sensitive_like=OFF;")
-				c.execute("SELECT * FROM transactions WHERE signature LIKE ?;", (m_stuff,))
-				m_detail = c.fetchone()
-				#print(m_detail)
-				c.close()
-				conn.close()				
+				
+				m_detail = get_two_arg("api_gettransaction",m_stuff,False)
 
 	else:
-		conn = sqlite3.connect(bis_root)
-		conn.text_factory = str
-		c = conn.cursor()
-		c.execute("PRAGMA case_sensitive_like=OFF;")
-		c.execute("SELECT * FROM transactions WHERE signature LIKE ?;", (m_stuff,))
-		m_detail = c.fetchone()
+
+		s = socks.socksocket()
+		s.settimeout(10)
+		s.connect((ip, int(port)))
+		connections.send(s, "api_gettransaction", 10)
+		connections.send(s, m_stuff)
+		connections.send(s, False)
+		m_detail = connections.receive(s, 10)
+		
+		s.close()
+		
+		#conn = sqlite3.connect(bis_root)
+		#conn.text_factory = str
+		#c = conn.cursor()
+		#c.execute("PRAGMA case_sensitive_like=OFF;")
+		#c.execute("SELECT * FROM transactions WHERE signature LIKE ?;", (m_stuff,))
+		#m_detail = c.fetchone()
 		#print(m_detail)
-		c.close()
-		conn.close()	
+		#c.close()
+		#conn.close()	
 	
 	return m_detail
 
@@ -250,12 +277,12 @@ def test(testString):
 		test_result = 1
 
 	if testString.isalnum() == True:
-		s = socks.socksocket()
-		s.settimeout(10)
-		s.connect((ip, int(port)))
-		connections.send(s, "addvalidate")
-		connections.send(s, testString)
-		validate_result = connections.receive(s)
+	
+		try:
+			validate_result = get_one_arg("addvalidate",testString)
+		except:
+			validate_result = ""
+		
 		if validate_result == "valid":
 			test_result = 1
 
@@ -268,12 +295,18 @@ def test(testString):
 def s_test(testString):
 
 	if testString.isalnum() == True:
-		s = socks.socksocket()
-		s.settimeout(10)
-		s.connect((ip, int(port)))
-		connections.send(s, "addvalidate")
-		connections.send(s, testString)
-		validate_result = connections.receive(s)
+		#s = socks.socksocket()
+		#s.settimeout(10)
+		#s.connect((ip, int(port)))
+		#connections.send(s, "addvalidate")
+		#connections.send(s, testString)
+		#validate_result = connections.receive(s)
+		#s.close()
+		
+		try:
+			validate_result = get_one_arg("addvalidate",testString)
+		except:
+			validate_result = ""
 		
 		if validate_result == "valid":
 			return True
@@ -331,17 +364,18 @@ def bgetvars(myaddress):
 		
 	return miner_details
 	
-def get_cmc_val():
+def get_cmc_val(y_data):
 
 	global cmc_vals
 	
 	l = ["BTC","USD","EUR","GBP","CNY","AUD"]
 	p = []
 	
-	t = "https://api.coingecko.com/api/v3/coins/bismuth?localization=false&tickers=false&market_data=true&community_data=false&developer_data=false"
-	r = requests.get(t)
-	x = r.text
-	y = json.loads(x)
+	#t = "https://api.coingecko.com/api/v3/coins/bismuth?localization=false&tickers=false&market_data=true&community_data=false&developer_data=false"
+	#r = requests.get(t)
+	#x = r.text
+	#y = json.loads(x)
+	y = y_data
 	
 	for curr in l:
 	
@@ -364,13 +398,33 @@ def get_cmc_val():
 def get_alias(address):
 
 	try:
-		conn = sqlite3.connect('{}index.db'.format(db_root))
-		conn.text_factory = str
-		c = conn.cursor()
-		c.execute("SELECT * FROM aliases WHERE address=? ORDER BY block_height DESC;", (address,))
-		r_alias = c.fetchone()[2]
-		c.close()
-		conn.close()
+		#s = socks.socksocket()
+		#s.settimeout(10)
+		#s.connect((ip, int(port)))
+		#connections.send(s, "aliasget", 10)
+		#connections.send(s, address)
+		#t_alias = connections.receive(s, 10)
+		#s.close()
+		
+		t_alias = get_one_arg("aliasget",address)
+		
+		try:
+			r_alias = t_alias[-1][-1]
+		except:
+			r_alias = ""
+			
+		if r_alias == address:
+			r_alias = ""
+				
+		#print(r_alias)
+		
+		#conn = sqlite3.connect('{}index.db'.format(db_root))
+		#conn.text_factory = str
+		#c = conn.cursor()
+		#c.execute("SELECT * FROM aliases WHERE address=? ORDER BY block_height DESC;", (address,))
+		#r_alias = c.fetchone()[2]
+		#c.close()
+		#conn.close()
 		
 		if not r_alias:
 			r_alias = ""
@@ -393,7 +447,7 @@ def get_tokens(address):
 		conn = sqlite3.connect('{}index.db'.format(db_root))
 		conn.text_factory = str
 		c = conn.cursor()
-		c.execute("SELECT * FROM tokens WHERE address=? ORDER BY block_height ASC;", (address,))
+		c.execute("SELECT * FROM tokens WHERE address=? ORDER BY block_height DESC;", (address,))
 		r_tokens = c.fetchall()
 		c.close()
 		conn.close()
@@ -402,9 +456,45 @@ def get_tokens(address):
 		r_tokens = None
 
 	return r_tokens
+	
+def query_tkaddy(this_tkaddy):
+
+	try:
+		conn = sqlite3.connect('{}index.db'.format(db_root))
+		conn.text_factory = str
+		c = conn.cursor()
+		c.execute("SELECT * FROM tokens WHERE address=? or recipient=? ORDER BY block_height DESC;", (this_tkaddy,this_tkaddy))
+		tx_tokens = c.fetchall()
+		c.close()
+		conn.close()
+
+	except:
+		tx_tokens = None
+
+	return tx_tokens
+	
+def query_token(this_token):
+
+	try:
+		conn = sqlite3.connect('{}index.db'.format(db_root))
+		conn.text_factory = str
+		c = conn.cursor()
+		c.execute("SELECT * FROM tokens WHERE token=? ORDER BY block_height DESC;", (this_token,))
+		q_tokens = c.fetchall()
+		c.close()
+		conn.close()
+
+	except:
+		q_tokens = None
+
+	return q_tokens
 
 
 def refresh(testAddress,typical):
+
+	#bal_all = get_one_arg("balancegetjson",testAddress)
+
+	#print(bal_all)
 
 	if typical == 1:
 		conn = sqlite3.connect(bis_root)
@@ -477,3 +567,50 @@ def refresh(testAddress,typical):
 	get_stuff = ["{:.8f}".format(credit),"{:.8f}".format(debit),"{:.8f}".format(rewards),"{:.8f}".format(fees),"{:.8f}".format(balance),t_max, t_min, b_count, r_alias]
 		
 	return get_stuff
+	
+def mem_html(b):
+
+	send_back = ""
+	
+	if b != "":
+		#print("Realmem: TXs in mempool: " + str(len(b)))
+		for response in b:
+			address = response['address']
+			m_alias = get_alias(address)
+			if m_alias != "":
+				address = m_alias
+			recipient = response['recipient']
+			m_alias = get_alias(recipient)
+			if m_alias != "":
+				recipient = m_alias
+			amount = response['amount']
+			txid = response['signature'][:56]
+			
+			timestamp = str(time.strftime("%H:%M:%S, %d/%m/%Y", time.gmtime(float(response['timestamp']))))
+			send_back = send_back + '<tr><th scope="row"> {} </th>\n'.format(timestamp)
+			send_back = send_back + '<td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>'.format(address,recipient,amount,txid)
+			
+	else:
+		timestamp = address = recipient = amount = txid = "-"
+		#print("Realmem: No TXs in mempool")
+		send_back = send_back + '<tr><th scope="row"> {} </th>\n'.format(timestamp)
+		send_back = send_back + '<td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>'.format(address,recipient,amount,txid)
+
+	return send_back
+	
+def xws(): # list of live wallet servers
+
+	try:
+
+		rep = requests.get("http://api.bismuth.live/servers/wallet/legacy.json")
+		if rep.status_code == 200:
+			wallets = rep.json()
+							
+		x = sorted([wallet for wallet in wallets if wallet['active']], key=lambda k: (k['clients']+1)/(k['total_slots']+2))
+		
+	except:
+		
+		x = ""
+		
+	return x
+

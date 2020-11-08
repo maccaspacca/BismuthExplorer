@@ -8,6 +8,29 @@ For license see LICENSE file
 
 For installation see Installation.md
 
+Version 2.0.0 08/11/2020
+------------------------
+
+Key Features
+------------
+
+1. Removal of Kafka components
+2. Reduction in direct database queries
+3. More use of node api commands
+4. Basic token explorer
+
+Future Changes
+--------------
+
+1. Hypernode information
+2. Further reduction in direct database queries
+3. Support for future Bismuth versions
+
+Version 1.0.1 28/06/2019
+------------------------
+
+1. API and txid bug fixes
+
 Key Features
 ------------
 
@@ -18,17 +41,6 @@ Key Features
 5. Data on front page is updated regularly
 6. Support for future address format changes
 
-Future Planned Changes
-----------------------
-
-1. Tokens explorer
-2. Hypernode information
-3. Removal of direct node database queries
-
-Version 1.0.1 28/06/2019
------------------------------
-
-1. API and txid bug fixes
 
 Version 1.0.0 26/06/2019
 -----------------------------

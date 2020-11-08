@@ -2,9 +2,10 @@
 
 Bismuth Explorer Tools DB Module
 
-Version 1.00
+Version 2.0.0
 
 """
+
 import sqlite3, time, os, threading, logging, toolsp
 from glob import glob
 from logging.handlers import RotatingFileHandler
@@ -92,7 +93,6 @@ def updatedb(do_first,last_block):
 			if t[3] not in r_all:
 				r_all.append(t[3])
 				#print(t[3])
-				
 					
 	app_log.info("Tools DB: Updating tools database")
 	print("Tools DB: Updating tools database")
@@ -135,7 +135,7 @@ def updatedb(do_first,last_block):
 		
 def buildtoolsdb():
 
-	fpath = "block.txt"
+	fpath = "blocks.txt"
 	if not os.path.exists(fpath):
 		do_first = True
 		latest_block = str(toolsp.latest()[0])

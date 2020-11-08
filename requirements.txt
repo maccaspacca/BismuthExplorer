@@ -4,6 +4,5 @@ BeautifulSoup4
 gevent
 requests
 pyqrcode
-kafka-python
 configparser
 pypng

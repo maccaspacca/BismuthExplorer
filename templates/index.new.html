@@ -82,7 +82,6 @@
             socket.on('my_info', function(msg) {
  				$('#curr_price').text(msg.btc);
  				$('#usd_price').text(msg.usd);
-				$('#ticker').text(msg.toc);
 				$('#fiat_price').text(msg.fiat);
 				$('#sys_mess').text(msg.mess);
             });
@@ -90,13 +89,6 @@
             // Event handler for sent mempool count.
             socket.on('my_mem', function(msg) {
 				$('#st7').text(msg.mem);
-            });
-			
-            // Event handler for custom toast message.
-            socket.on('my_toast', function(msg) {
-				$('#toast_mess').text(msg.c_toast);
-				$('.toast').toast({animation: true, delay: 5000});
-				$('.toast').toast('show');
             });
 			
             // Event handler for wallet server count.
@@ -125,7 +117,10 @@
     <div class="container-fluid">
 	<table class="table mt-0 mb-0">
 	<tr>
-	  <td><button type="button" class="btn btn-outline-dark mb-3 btn-sm" data-toggle="collapse" data-target="#info">Toggle Information</button></td>
+	  <td>
+		  <button type="button" class="btn btn-outline-dark mb-3 btn-sm" data-toggle="collapse" data-target="#info">Toggle Information</button>
+		  <button type="button" class="btn btn-outline-dark mb-3 btn-sm" data-toggle="collapse" data-target="#trans">Toggle Transactions</button>
+	  </td>
 	  <td><div class="toast mt-0 mb-0">
 		<div class="toast-body">
 		  <span id="toast_mess"></span>
@@ -159,9 +154,9 @@
 			  <li><b>Total Supply: </b><span id="totalbis">updating...</span></li>
               <li><b>Price (BTC): </b><span id="curr_price">updating...</span></li>
               <li><b>Price (USD): </b><span id="usd_price">updating...</span></li>
-              <li><b>Price (<span id="ticker">...</span>): </b><span id="fiat_price">updating...</span></li>
+              <li><b>Price (EUR): </b><span id="fiat_price">updating...</span></li>
 			  <li><b>Active Wallet Servers: </b><a id="pop_servers" class="link" href="/wservers"><span id="a_wallet_s">updating...</span></a></li>
-			  <li style="color: #339933;"><b><span id="sys_mess"></span></b></li>
+			  <li style="color: #ff0000;"><b><span id="sys_mess"></span></b></li>
             </ul>
           </div>
 		  <div style="font-size: 80%" class="card-footer text-muted">Prices courtesy of <a class="link" href="https://www.coingecko.com/en/coins/bismuth">CoinGecko</a></div>
@@ -174,7 +169,7 @@
             <ul class="list-unstyled mt-0 mb-0">
               <li><b>Miner: <span id="blminer">Please wait for next block...</span></b></li>
  			  <li><b>Difficulty: </b><span id="bldiff">updating...</span></li>
-			  <li><b>Time found (UTC): </b><span id="bltime">updating...</span></li>
+			  <li><b>Time found: </b><span id="bltime">updating...</span></li>
             </ul>
 			<!--
 			  <div class="toast mt-2">
@@ -191,7 +186,8 @@
         </div>
        </div>
 	   </div>
-	 </div> 
+	 </div>
+	<div id="trans" class="collapse">
 	<div class="container-fluid mt-0">
 	<h4><center>Latest Transactions</center></h4>
 	<table style="font-size: 70%" class="table table-striped table-sm">
@@ -207,7 +203,8 @@
 				<th scope="col">Reward</th>
 			</tr>
 		</thead>
-		<tbody id="txlatest"><tr><th scope="row">Please wait while I update the transaction list</th><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr></tbody>
+		<tbody id="txlatest"></tbody>
 	</table>
+	</div>
 	</div>
 {% endblock %}

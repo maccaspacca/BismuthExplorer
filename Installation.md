@@ -4,53 +4,29 @@ Requirements
 ============
 
 1. A running full Bismuth node
-2. A Kafka server instance
-3. Python 3.6 or better
-4. Additional python modules as noted in requirements.txt
+2. Python 3.6 or better
+3. Additional python modules as noted in requirements.txt
 
 Steps
 =====
 
-1. If you don't have one already create a folder called 'plugins' in your Bismuth installation folder
-2. Copy the folder '601_exp_send_block' and its contents into the 'plugins' folder
-3. Edit the file '601_plugin.ini' with settings for your installation (see below)
-4. Copy the file '601_plugin.ini' to the root of your Bismuth installation folder
-5. Copy the folder 'explorer' to a suitable folder on your server
-6. Edit the file 'explorer.ini' with settings for your installation (see below)
-7. Adjust your edge firewall settings to route your external port to the internal port configured in 'explorer.ini'
+If you are migrating from version 1.0 you no longer need the kafka server instance or the '601_exp_send_block' plugin.
+The plugin folder '601_exp_send_block' should be removed.
+If this was the only plugin being used the plugin folder can be removed or renamed
+
+1. Copy the folder 'explorer' to a suitable folder on your server
+2. Edit the file 'explorer.ini' with settings for your installation (see below)
+3. Adjust your edge firewall settings to route your external port to the internal port configured in 'explorer.ini'
 
 Starting
 ========
 
-1. Start your node and let it fully synchronise. This will start producing block, status and other information and will send it to your Kafka server
-2. Run 'toolsdb.py'. On first run this will create a new database called tools.db and fill it with information. Let this fully synchronise.
+1. Start your node and let it fully synchronise.
+2. Run 'toolsdb.py'. On first run this will create a new database called tools.db and fill it with information. Important: let this fully synchronise.
 3. Run 'explorebis.py' this will run the Bismuth Explorer itself. If all is well you should now have your explorer instance up and running and ready for access.
-
-601_plugin.ini
-==============
-
-This file contains the settings for the Bismuth Plugin for the explorer. This part of the explorer uses the Plugins feature of the Bismuth node.
-It's job is to capture block, status and other information and send this to your kafka server.
-The explorer itself picks up this information and sends it to attached clients using socket-io
-
-kafkahost = IP address of the kafka server
-
-kafkaport = Port of the kafka server
-
-altcurrency = The display currency on the front page of the explorer options are: EUR,GBP,USD,CNY,AUD
-
-nodeport = Port of your Bismuth node, this is usually 5658
-
-nodeip = IP of your Bismuth node
-
-doprice = Enable or disable price checking. Options are true or false. If you set this to false then no price information will appear on the explorer front page.
 
 explorer.ini
 ============
-
-kafkahost = IP address of the kafka server
-
-kafkaport = Port of the kafka server
 
 altcurrency = The display currency on the front page of the explorer and richlist options are: EUR,GBP,USD,CNY,AUD
 
@@ -80,6 +56,26 @@ bis_limit = Richlist minimum Bismuth balance. Addresses below this will not be d
 
 txlistlim = Maximum number of transactions to be returned by the api command addlistlim or addlistlimjson. The usual setting is 50
 
-secret = random string used for the Flask SECRET_KEY property
+secret = A random string used for the Flask SECRET_KEY property. You can replace this with your own
 
 webport = Port of the Tornado web server
+
+logging = logging level options used are: info, warning
+
+devmode = normally set to false
+
+message.txt
+===========
+
+Edit the fields as follows
+
+secret = the string in this field should match the secret in explorer.ini
+
+message = the string in this field will be displayed in the middle information field on the explorer home page. Normally this is left blank
+If there is a network message from the node this will displayed in its place.
+
+
+
+
+
+
