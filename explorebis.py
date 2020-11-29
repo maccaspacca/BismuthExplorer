@@ -1643,6 +1643,9 @@ def handler(param1, param2):
 			
 	elif param1 == "info":
 		
+		if param2 == "totalsupply":
+			x = toolsp.getcirc()
+			return json.dumps(str(x[0])).strip('"'), 200, {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'}
 		if param2 == "coinsupply":
 			x = toolsp.getcirc()
 			return json.dumps({'circulating':str(x[1]),'total':str(x[0])}), 200, {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'}
