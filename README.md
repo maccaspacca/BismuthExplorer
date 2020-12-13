@@ -8,6 +8,17 @@ For license see LICENSE file
 
 For installation see Installation.md
 
+Version 2.0.1 12/12/2020
+------------------------
+
+Key Features
+------------
+
+1. Minor fixes
+2. Ability to disable Ledger Query and Search
+3. Further use of node api commands
+4. New api command for circulation
+
 Version 2.0.0 08/11/2020
 ------------------------
 

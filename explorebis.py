@@ -2,13 +2,13 @@
 
 Bismuth Explorer Main Module
 
-Version 2.0.0
+Version 2.0.1
 
 """
 from gevent.pywsgi import WSGIServer # Imports the WSGIServer
 from gevent import monkey; monkey.patch_all()
 
-import json, time, os, sqlite3, requests, datetime, calendar, re, toolsp, bisurl, pyqrcode, logging, socks, connections
+import json, time, os, sqlite3, requests, datetime, calendar, re, toolsp, bisurl, pyqrcode, logging, socks
 from bs4 import BeautifulSoup
 from threading import Lock
 from decimal import *
@@ -109,6 +109,24 @@ try:
 		dev_state = False
 except:
 	dev_state = True
+	
+try:
+	do_ledger = config.get('My Explorer', 'do_ledger')
+	if do_ledger.lower() == "true":
+		do_ledger = True
+	else:
+		do_ledger = False
+except:
+	do_ledger = True
+	
+try:
+	do_quicksearch = config.get('My Explorer', 'do_quicksearch')
+	if do_quicksearch.lower() == "true":
+		do_quicksearch = True
+	else:
+		do_quicksearch = False
+except:
+	do_quicksearch = True
 
 log_formatter = logging.Formatter('%(asctime)s %(levelname)s %(funcName)s(%(lineno)d) %(message)s')
 logFile = 'explorer.log'
@@ -130,6 +148,11 @@ vip_mess = ""
 do_cmc_once = False
 
 app_log.info("Config and logging done")
+
+if not do_ledger:
+	app_log.warning("Ledger Query Disabled")
+if not do_quicksearch:
+	app_log.warning("Quick Search Disabled")
 
 # Read config
 
@@ -529,11 +552,15 @@ def mempool():
 	
 @app.route('/ledgerquery', methods=['GET'])
 def ledger_form():
-	starter = ''
-	extext = ''
-	valtext = ''
-	return render_template('ledgerquery.html', starter=starter, extext=extext, valtext=valtext)
 
+	if do_ledger:
+		starter = ''
+		extext = ''
+		valtext = ''
+		return render_template('ledgerquery.html', starter=starter, extext=extext, valtext=valtext)
+	else:
+		starter = 'Ledger Query'
+		return render_template('generic.html', starter=starter)
 	
 @app.route('/ledgerquery', methods=['POST'])
 def ledger_query():
@@ -624,10 +651,11 @@ def ledger_query():
 			#temp_all = [d for d in dump_all if l_date <= d[1] <= r_date]
 		
 			conn = sqlite3.connect(bis_root)
-			c = conn.cursor()
-			c.execute("SELECT * FROM transactions WHERE (timestamp BETWEEN ? AND ?) AND (address = ? OR recipient = ?) ORDER BY timestamp DESC;", (l_date,r_date,str(myblock),str(myblock)))
-			temp_all = c.fetchall()
 			
+			c = conn.cursor()
+			c.execute("SELECT * FROM transactions WHERE (timestamp BETWEEN ? AND ?) AND (address = ? OR recipient = ?) ORDER BY abs(block_height) DESC;", (l_date,r_date,str(myblock),str(myblock)))
+			temp_all = c.fetchall()
+
 			if str(myblock) == dev_address:
 				temp_all = [a for a in temp_all if "Development Reward" not in a[2]]
 
@@ -638,7 +666,7 @@ def ledger_query():
 				all = temp_all
 			else:
 				all = temp_all[:mydisplay]
-			
+
 			c.close()
 			conn.close()
 		
@@ -1262,175 +1290,183 @@ def search_result():
 	
 	my_type = toolsp.test(myblock)
 	
-	if my_type == 1:
+	if do_quicksearch:
 	
-		myxtions = toolsp.refresh(myblock,1)
-		#print(myxtions)
+		if my_type == 1:
 		
-		if float(myxtions[0]) or float(myxtions[2]) > 0:
-		
-			a_block_d = "{}....{}".format(myblock[:5],myblock[-5:])
+			myxtions = toolsp.refresh(myblock,1)
+			#print(myxtions)
 			
-			if not os.path.exists('static/qr_{}.png'.format(myblock)):
-				myblock_qr = pyqrcode.create(myblock)
-				myblock_qr_png = myblock_qr.png('static/qr_{}.png'.format(myblock), scale=3)
-					
-			if myxtions[8] == "":
-				alias_disp = "None found"
-			else:
-				alias_disp = myxtions[8]
+			if float(myxtions[0]) or float(myxtions[2]) > 0:
+			
+				a_block_d = "{}....{}".format(myblock[:5],myblock[-5:])
 				
-			xplot = []
-			
-			xplot.append('<div class="card-deck mb-3 text-left">\n')
-			xplot.append('<div class="card mb-4 box-shadow">\n')
-			xplot.append('<div class="card-header"><h4 class="my-0 font-weight-normal">Information</h4></div>\n')
-			xplot.append('<div style="font-size: 80%"  class="card-body">\n')
-			xplot.append('<table style="font-size: 100%" class="table table-sm">\n')
-			xplot.append('<tr><td>Address: {}</td></tr>\n'.format(myblock))
-			xplot.append('<tr><td>Alias: {}</td></tr>\n'.format(alias_disp))
-			xplot.append('<tr><td><b>Balance: {}</b></td></tr>\n'.format(myxtions[4]))
-			xplot.append('<tr><td>Total Received: {}</td></tr>\n'.format(myxtions[0]))
-			xplot.append('<tr><td>Total Spent: {}</td></tr>\n'.format(myxtions[1]))
-			xplot.append('<tr><td>Rewards: {}</td></tr>\n'.format(myxtions[2]))
-			xplot.append('<tr><td>Fees: {}</td></tr>\n'.format(myxtions[3]))
-			xplot.append('</table>\n')
-			xplot.append('</div></div>\n')
-			xplot.append('<div class="card mb-4 box-shadow">\n')
-			xplot.append('<div style="font-size: 100%"  class="card-body">\n')
-			xplot.append('<center><p><img src="static/qr_{0}.png" alt="{0}"></img></p>\n'.format(myblock))
-			xplot.append('<p>{}</p></center>\n'.format(myblock))
-			xplot.append('</div></div>\n')
-			
-			extext = "" + str(''.join(xplot))
-			
-			xplot = None
-		
-			conn = sqlite3.connect(bis_root)
-			c = conn.cursor()
-			c.execute("SELECT * FROM transactions WHERE address = ? OR recipient = ? ORDER BY timestamp DESC;", (str(myblock),str(myblock)))
-			
-			temp_all = c.fetchall()
-
-			if mydisplay == 0:
-				all = temp_all
-			elif str(myblock) == topia:
-				all = temp_all
-			else:
-				all = temp_all[:mydisplay]
-			
-			c.close()
-			conn.close()
-		
-		else:
-
-			conn = sqlite3.connect(bis_root)
-			c = conn.cursor()
-			c.execute("SELECT * FROM transactions WHERE block_hash = ?;", (str(myblock),))
-
-			all = c.fetchall()
-			
-			c.close()
-			conn.close()
-		
-			if not all:
-				
-				all = [toolsp.get_the_details(str(myblock),"")]
-				
-			if not all[0]:				
-				extext = "<center><p style='color:#C70039'>Nothing found for the block, address, txid or hash you entered - perhaps no transactions have been made?</p></center>"
-			else:
-				extext = "<center><p style='color:#08750A'><b>Transaction found for the txid you entered</b></p><center>"
-	
-	if my_type == 2:
-	
-		if myblock == "0":
-		
-			all = []
-		
-		else:
-		
-			conn = sqlite3.connect(bis_root)
-			c = conn.cursor()
-			c.execute("SELECT * FROM transactions WHERE block_height = ?;", (myblock,))
-
-			all = c.fetchall()
-		
-			c.close()
-			conn.close()
-	
-		if not all:
-			extext = "<center><p style='color:#C70039'>Block, address, txid or hash not found. Maybe there have been no transactions, you entered bad data, or you entered nothing at all?</p></center>\n"
-		else:
-			extext = "<center><p style='color:#08750A'><b>Block {} found</b></p></center>\n".format(myblock)
-			
-	if my_type == 3:
-		all = None
-		extext = "<center><p style='color:#C70039'>Block, address, txid or hash not found. Maybe there have been no transactions, you entered bad data, or you entered nothing at all?</p></center>\n"
-	
-	if not all:
-		starter = ""
-	elif not all[0]:
-		starter = ""
-	else:
-		view = []
-		i = 0
-		
-		for x in all:
+				if not os.path.exists('static/qr_{}.png'.format(myblock)):
+					myblock_qr = pyqrcode.create(myblock)
+					myblock_qr_png = myblock_qr.png('static/qr_{}.png'.format(myblock), scale=3)
 						
-			if bool(BeautifulSoup(str(x[11]),"html.parser").find()):
-				x_open = "HTML NOT SHOWN HERE"
-			else:
-				x_open = str(x[11][:20])
+				if myxtions[8] == "":
+					alias_disp = "None found"
+				else:
+					alias_disp = myxtions[8]
+					
+				xplot = []
+				
+				xplot.append('<div class="card-deck mb-3 text-left">\n')
+				xplot.append('<div class="card mb-4 box-shadow">\n')
+				xplot.append('<div class="card-header"><h4 class="my-0 font-weight-normal">Information</h4></div>\n')
+				xplot.append('<div style="font-size: 80%"  class="card-body">\n')
+				xplot.append('<table style="font-size: 100%" class="table table-sm">\n')
+				xplot.append('<tr><td>Address: {}</td></tr>\n'.format(myblock))
+				xplot.append('<tr><td>Alias: {}</td></tr>\n'.format(alias_disp))
+				xplot.append('<tr><td><b>Balance: {}</b></td></tr>\n'.format(myxtions[4]))
+				xplot.append('<tr><td>Total Received: {}</td></tr>\n'.format(myxtions[0]))
+				xplot.append('<tr><td>Total Spent: {}</td></tr>\n'.format(myxtions[1]))
+				xplot.append('<tr><td>Rewards: {}</td></tr>\n'.format(myxtions[2]))
+				xplot.append('<tr><td>Fees: {}</td></tr>\n'.format(myxtions[3]))
+				xplot.append('</table>\n')
+				xplot.append('</div></div>\n')
+				xplot.append('<div class="card mb-4 box-shadow">\n')
+				xplot.append('<div style="font-size: 100%"  class="card-body">\n')
+				xplot.append('<center><p><img src="static/qr_{0}.png" alt="{0}"></img></p>\n'.format(myblock))
+				xplot.append('<p>{}</p></center>\n'.format(myblock))
+				xplot.append('</div></div>\n')
+				
+				extext = "" + str(''.join(xplot))
+				
+				xplot = None
 			
-			det_str = str(x[5][:56])
-			det_str = det_str.replace("+","%2B")
-			det_str = det_str.replace("<","&lt;")
-			det_str = det_str.replace(">","&gt;")
-			det_link = "/details?mydetail={}&myaddress={}".format(det_str,str(x[2]))
-			view.append('<tr>')
+				conn = sqlite3.connect(bis_root)
+				c = conn.cursor()
+				c.execute("SELECT * FROM transactions WHERE address = ? OR recipient = ? ORDER BY timestamp DESC;", (str(myblock),str(myblock)))
+				
+				temp_all = c.fetchall()
 
-			if x[0] < 0:
-				view.append('<td>{}</td>'.format(str(x[0])))
+				if mydisplay == 0:
+					all = temp_all
+				elif str(myblock) == topia:
+					all = temp_all
+				else:
+					all = temp_all[:mydisplay]
+				
+				c.close()
+				conn.close()
+			
 			else:
-				view.append('<td><a href="{}">{}</a></td>'.format(det_link,str(x[0])))
-			view.append('<td>{}'.format(str(time.strftime("%Y/%m/%d,%H:%M:%S", time.gmtime(float(x[1]))))))
-			view.append('<td>{}</td>'.format(str(x[2])))
-			view.append('<td>{}</td>'.format(str(x[3])))
-			view.append('<td>{}</td>'.format(str(x[4])))
-			view.append('<td>{}</td>'.format(str(x[5][:56])))
-			view.append('<td>{}</td>'.format(str(x[8])))
-			view.append('<td>{}</td>'.format(str(x[9])))
-			view.append('<td>{}</td>'.format(str(x[10])))
-			view.append('<td>{}</td>'.format(x_open))
-			view.append('</tr>\n')
-			i = i+1
+			
+				dump_all = toolsp.get_one_arg("api_getblockfromhash",myblock)
+					
+				try:
+					hash_block = list(dump_all.keys())[0]
+					
+					all = toolsp.get_one_arg("blockget",hash_block)
+					
+					extext = "<center><p style='color:#08750A'><b>Transaction found for the hash you entered</b></p><center>"
+				
+				except:
+					all = None
+			
+				if not all:
+					
+					all = [toolsp.get_the_details(str(myblock),"")]
+					extext = "<center><p style='color:#08750A'><b>Transaction found for the txid you entered</b></p><center>"
+					
+				if not all[0]:				
+					extext = "<center><p style='color:#C70039'>Nothing found for the block, address, txid or hash you entered - perhaps no transactions have been made?</p></center>"
+				#else:
+					#extext = "<center><p style='color:#08750A'><b>Transaction found for the txid you entered</b></p><center>"
+		
+		if my_type == 2:
+		
+			if myblock == "0":
+			
+				all = []
+			
+			else:
+			
+				try:
+					
+					all = toolsp.get_one_arg("blockget",myblock)
+					
+				except:
+					all = None
 
-		replot = []
+			if not all:
+				extext = "<center><p style='color:#C70039'>Block, address, txid or hash not found. Maybe there have been no transactions, you entered bad data, or you entered nothing at all?</p></center>\n"
+			else:
+				extext = "<center><p style='color:#08750A'><b>Block {} found</b></p></center>\n".format(myblock)
+				
+		if my_type == 3:
+			all = None
+			extext = "<center><p style='color:#C70039'>Block, address, txid or hash not found. Maybe there have been no transactions, you entered bad data, or you entered nothing at all?</p></center>\n"
 		
-		if mydisplay == 0:
-			replot.append('<h4><center>Transaction List</center></h4>')
+		if not all:
+			starter = ""
+		elif not all[0]:
+			starter = ""
 		else:
-			replot.append('<center><h4>Transaction List</h4><sm>({} tx limit)</sm></center>'.format(str(mydisplay)))
-		replot.append('<table style="font-size: 65%" class="table table-striped table-sm">\n')
-		replot.append('<tr><thead>\n')
-		replot.append('<th scope="col">Block</th>\n')
-		replot.append('<th scope="col">Timestamp</th>\n')
-		replot.append('<th scope="col">From</th>\n')
-		replot.append('<th scope="col">To</th>\n')
-		replot.append('<th scope="col">Amount</th>\n')
-		replot.append('<th scope="col">Transaction ID (txid)</th>\n')
-		replot.append('<th scope="col">Fee</th>\n')
-		replot.append('<th scope="col">Reward</th>\n')
-		replot.append('<th scope="col">Operation</th>\n')
-		replot.append('<th scope="col">Message Starts</th>\n')
-		replot.append('</thead></tr>\n')
-		replot = replot + view
-		replot.append('</table>\n')
+			view = []
+			i = 0
+			
+			for x in all:
+							
+				if bool(BeautifulSoup(str(x[11]),"html.parser").find()):
+					x_open = "HTML NOT SHOWN HERE"
+				else:
+					x_open = str(x[11][:20])
+				
+				det_str = str(x[5][:56])
+				det_str = det_str.replace("+","%2B")
+				det_str = det_str.replace("<","&lt;")
+				det_str = det_str.replace(">","&gt;")
+				det_link = "/details?mydetail={}&myaddress={}".format(det_str,str(x[2]))
+				view.append('<tr>')
+
+				if x[0] < 0:
+					view.append('<td>{}</td>'.format(str(x[0])))
+				else:
+					view.append('<td><a href="{}">{}</a></td>'.format(det_link,str(x[0])))
+				view.append('<td>{}'.format(str(time.strftime("%Y/%m/%d,%H:%M:%S", time.gmtime(float(x[1]))))))
+				view.append('<td>{}</td>'.format(str(x[2])))
+				view.append('<td>{}</td>'.format(str(x[3])))
+				view.append('<td>{}</td>'.format(str(x[4])))
+				view.append('<td>{}</td>'.format(str(x[5][:56])))
+				view.append('<td>{}</td>'.format(str(x[8])))
+				view.append('<td>{}</td>'.format(str(x[9])))
+				view.append('<td>{}</td>'.format(str(x[10])))
+				view.append('<td>{}</td>'.format(x_open))
+				view.append('</tr>\n')
+				i = i+1
+
+			replot = []
+			
+			if mydisplay == 0:
+				replot.append('<h4><center>Transaction List</center></h4>')
+			else:
+				replot.append('<center><h4>Transaction List</h4><sm>({} tx limit)</sm></center>'.format(str(mydisplay)))
+			replot.append('<table style="font-size: 65%" class="table table-striped table-sm">\n')
+			replot.append('<tr><thead>\n')
+			replot.append('<th scope="col">Block</th>\n')
+			replot.append('<th scope="col">Timestamp</th>\n')
+			replot.append('<th scope="col">From</th>\n')
+			replot.append('<th scope="col">To</th>\n')
+			replot.append('<th scope="col">Amount</th>\n')
+			replot.append('<th scope="col">Transaction ID (txid)</th>\n')
+			replot.append('<th scope="col">Fee</th>\n')
+			replot.append('<th scope="col">Reward</th>\n')
+			replot.append('<th scope="col">Operation</th>\n')
+			replot.append('<th scope="col">Message Starts</th>\n')
+			replot.append('</thead></tr>\n')
+			replot = replot + view
+			replot.append('</table>\n')
+			
+			starter = "" + str(''.join(replot))
 		
-		starter = "" + str(''.join(replot))
-	
-	return render_template('search.html', starter=starter, extext=extext)
+		return render_template('search.html', starter=starter, extext=extext)
+		
+	else:
+		starter = 'Quick Search'
+		return render_template('generic.html', starter=starter)
 
 	
 @app.route('/api/<param1>/<param2>', methods=['GET'])
@@ -1643,55 +1679,84 @@ def handler(param1, param2):
 			
 	elif param1 == "info":
 		
-		if param2 == "totalsupply":
-			x = toolsp.getcirc()
-			return json.dumps(str(x[0])).strip('"'), 200, {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'}
 		if param2 == "coinsupply":
 			x = toolsp.getcirc()
 			return json.dumps({'circulating':str(x[1]),'total':str(x[0])}), 200, {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'}
+		if param2 == "totalsupply":
+			x = toolsp.getcirc()
+			return json.dumps(str(x[0])).strip('"'), 200, {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'}
 		if param2 == "wservers":
 			w = toolsp.xws()
 			return json.dumps(w), 200, {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'}
+		if "richlist" in param2:
+			rawall = toolsp.richones()
+			x = toolsp.getcirc()
+			
+			supp = float(x[0])
+			
+			all = []
+			
+			for r in rawall:
+				all.append((r[0],float(r[1]),r[2]))
+					
+			all = sorted(all, key=lambda address: address[1], reverse=True)
+			all = all[:1000]
+			
+			y = []
+			count = 1
+			
+			for i in all:
+				i_percent = (float(i[1])/supp)*100
+				y.append({"rank":str(count),"address":str(i[0]),"balance":str(i[1]),"alias":str(i[2]),"percent":str(i_percent)})
+				count =+1
+			
+			return json.dumps(y), 200, {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'}
 			
 	elif param1 == "getall":
-		getaddress = str(param2)
-		a_display = False
-		if "f:" in getaddress:
-			a_display = True
-			getaddress = getaddress.split(":")[1]
-			#print(getaddress)
-			#print(a_display)
-			
-		if "a:" in getaddress:
-			getaddress = toolsp.rev_alias(getaddress)
-			
-		if not getaddress or not toolsp.s_test(getaddress):
-			r = "invalid data entered"
+	
+		if do_ledger:
+			getaddress = str(param2)
+			a_display = False
+			if "f:" in getaddress:
+				a_display = True
+				getaddress = getaddress.split(":")[1]
+				#print(getaddress)
+				#print(a_display)
+				
+			if "a:" in getaddress:
+				getaddress = toolsp.rev_alias(getaddress)
+				
+			if not getaddress or not toolsp.s_test(getaddress):
+				r = "invalid data entered"
+				e = {"error":r}
+				return json.dumps(e), 400, {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'}
+			else:
+				all = []
+				conn = sqlite3.connect(bis_root)
+				c = conn.cursor()
+				if mydisplay == 0 or a_display:
+					c.execute("SELECT * FROM transactions WHERE address = ? OR recipient = ? ORDER BY abs(block_height) DESC;", (getaddress,getaddress))
+				else:
+					c.execute("SELECT * FROM transactions WHERE address = ? OR recipient = ? ORDER BY abs(block_height) DESC LIMIT ?;", (getaddress,getaddress,str(mydisplay)))
+				all = c.fetchall()
+				c.close()
+				conn.close()
+				if not all:
+					r = "address does not exist or invalid address"
+					e = {"error":r}
+					return json.dumps(e), 404, {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'}
+				else:
+					y = []
+					#y.append({"address":getaddress,"limit":"{} records".format(str(mydisplay))})
+					
+					for b in all:
+						y.append({"block":str(b[0]),"timestamp":str(b[1]),"from":str(b[2]),"to":str(b[3]),"amount":str(b[4]),"txid":str(b[5][:56]),"fee":str(b[8]),"reward":str(b[9]),"operation":str(b[10]),"openfield":str(b[11])})
+					
+					return json.dumps(y), 200, {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'}
+		else:
+			r = "function not available"
 			e = {"error":r}
 			return json.dumps(e), 400, {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'}
-		else:
-			all = []
-			conn = sqlite3.connect(bis_root)
-			c = conn.cursor()
-			if mydisplay == 0 or a_display:
-				c.execute("SELECT * FROM transactions WHERE address = ? OR recipient = ? ORDER BY abs(block_height) DESC;", (getaddress,getaddress))
-			else:
-				c.execute("SELECT * FROM transactions WHERE address = ? OR recipient = ? ORDER BY abs(block_height) DESC LIMIT ?;", (getaddress,getaddress,str(mydisplay)))
-			all = c.fetchall()
-			c.close()
-			conn.close()
-			if not all:
-				r = "address does not exist or invalid address"
-				e = {"error":r}
-				return json.dumps(e), 404, {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'}
-			else:
-				y = []
-				#y.append({"address":getaddress,"limit":"{} records".format(str(mydisplay))})
-				
-				for b in all:
-					y.append({"block":str(b[0]),"timestamp":str(b[1]),"from":str(b[2]),"to":str(b[3]),"amount":str(b[4]),"txid":str(b[5][:56]),"fee":str(b[8]),"reward":str(b[9]),"operation":str(b[10]),"openfield":str(b[11])})
-				
-				return json.dumps(y), 200, {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'}
 
 	elif param1 == "block":
 		myblock = str(param2)
@@ -1701,13 +1766,13 @@ def handler(param1, param2):
 			return json.dumps(e), 400, {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'}
 		else:
 			all = []
-			conn = sqlite3.connect(bis_root)
-			c = conn.cursor()
-			c.execute("SELECT * FROM transactions WHERE block_height = ?;", (myblock,))
-			all = c.fetchall()
-
-			c.close()
-			conn.close()
+			
+			try:
+				
+				all = toolsp.get_one_arg("blockget",myblock)
+				
+			except:
+				all = None
 
 			if not all:
 				r = "block does not exist or invalid block"
@@ -1982,7 +2047,11 @@ def test_connect():
 			app_log.info("New Connection {}".format(request.sid))
 			x = get_wallet_servers()
 			
-			emit('my_transactions', {'data': txlist50},namespace='/test')
+			try:
+				emit('my_transactions', {'data': txlist50},namespace='/test')
+			except:
+				tx_new_con = get_50()
+				emit('my_transactions', {'data': tx_new_con},namespace='/test')
 
 
 @socketio.on('disconnect', namespace='/test')

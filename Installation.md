@@ -14,7 +14,7 @@ If you are migrating from version 1.0 you no longer need the kafka server instan
 The plugin folder '601_exp_send_block' should be removed.
 If this was the only plugin being used the plugin folder can be removed or renamed
 
-1. Copy the folder 'explorer' to a suitable folder on your server
+1. Copy or synchronise the files to a suitable folder on your server
 2. Edit the file 'explorer.ini' with settings for your installation (see below)
 3. Adjust your edge firewall settings to route your external port to the internal port configured in 'explorer.ini'
 
@@ -63,6 +63,10 @@ webport = Port of the Tornado web server
 logging = logging level options used are: info, warning
 
 devmode = normally set to false
+
+do_ledger = normally set to true. Set to false to disable ledger queries
+
+do_quicksearch = normally set to true. Set to false to disable the Search form on the main page
 
 message.txt
 ===========

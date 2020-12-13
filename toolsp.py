@@ -2,7 +2,7 @@
 
 Bismuth Explorer Proceedures Module
 
-Version 2.0.0
+Version 2.0.1
 
 """
 
@@ -247,25 +247,7 @@ def get_the_details(getdetail, get_addy):
 
 	else:
 
-		s = socks.socksocket()
-		s.settimeout(10)
-		s.connect((ip, int(port)))
-		connections.send(s, "api_gettransaction", 10)
-		connections.send(s, m_stuff)
-		connections.send(s, False)
-		m_detail = connections.receive(s, 10)
-		
-		s.close()
-		
-		#conn = sqlite3.connect(bis_root)
-		#conn.text_factory = str
-		#c = conn.cursor()
-		#c.execute("PRAGMA case_sensitive_like=OFF;")
-		#c.execute("SELECT * FROM transactions WHERE signature LIKE ?;", (m_stuff,))
-		#m_detail = c.fetchone()
-		#print(m_detail)
-		#c.close()
-		#conn.close()	
+		m_detail = get_two_arg("api_gettransaction",m_stuff,False)
 	
 	return m_detail
 
@@ -295,14 +277,7 @@ def test(testString):
 def s_test(testString):
 
 	if testString.isalnum() == True:
-		#s = socks.socksocket()
-		#s.settimeout(10)
-		#s.connect((ip, int(port)))
-		#connections.send(s, "addvalidate")
-		#connections.send(s, testString)
-		#validate_result = connections.receive(s)
-		#s.close()
-		
+
 		try:
 			validate_result = get_one_arg("addvalidate",testString)
 		except:
@@ -398,13 +373,6 @@ def get_cmc_val(y_data):
 def get_alias(address):
 
 	try:
-		#s = socks.socksocket()
-		#s.settimeout(10)
-		#s.connect((ip, int(port)))
-		#connections.send(s, "aliasget", 10)
-		#connections.send(s, address)
-		#t_alias = connections.receive(s, 10)
-		#s.close()
 		
 		t_alias = get_one_arg("aliasget",address)
 		
@@ -416,16 +384,6 @@ def get_alias(address):
 		if r_alias == address:
 			r_alias = ""
 				
-		#print(r_alias)
-		
-		#conn = sqlite3.connect('{}index.db'.format(db_root))
-		#conn.text_factory = str
-		#c = conn.cursor()
-		#c.execute("SELECT * FROM aliases WHERE address=? ORDER BY block_height DESC;", (address,))
-		#r_alias = c.fetchone()[2]
-		#c.close()
-		#conn.close()
-		
 		if not r_alias:
 			r_alias = ""
 	except:
@@ -506,7 +464,7 @@ def refresh(testAddress,typical):
 		c = conn.cursor()
 	else:
 		pass
-	
+		
 	credit = float(0)
 	try:
 		c.execute("SELECT amount FROM transactions WHERE recipient = ?;",(testAddress,))
