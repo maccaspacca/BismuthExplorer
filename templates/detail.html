@@ -8,47 +8,57 @@
 		<h3>Bismuth Cryptocurrency</h3>
 		<p>Transaction Information</p>
 	</div>
-	<div class="container-fluid">
-		<table class="table table-striped table-sm" style="font-size: 80%;table-layout: fixed; width: 99%;"><tbody>
-		<tr>
-		<td align="left" style="border:hidden;">
-		<b>Block:</b> {{ ablock }}
-		</td><td style="border:hidden"></td></tr><tr>
-		<td align="left" style="border:hidden;">
-		<b>Timestamp:</b> {{ atime }}
-		</td><td style="border:hidden"></td></tr><tr>
-		<td align="left" style="border:hidden;">
-		<b>From:</b> {{ afrom }}
-		</td><td style="border:hidden"></td></tr><tr>
-		<td align="left" style="border:hidden;">
-		<b>To:</b> {{ ato }}
-		</td><td style="border:hidden"></td></tr><tr>
-		<td align="left" style="border:hidden;">
-		<b>Amount:</b> {{ aamount }}
-		</td><td style="border:hidden"></td></tr>
-		<tr>
-		<td align="left" style="border:hidden;overflow-wrap:break-word;">
-		<b>Signature:</b> {{ asig }}
-		</td><td style="border:hidden;width:6px;"></td></tr>
-		<tr>
-		<td align="left" style="border:hidden;">
-		<b>Transaction ID:</b> {{ atxid }}
-		</td><td style="border:hidden;width:6px;"></td></tr>
-		<tr>
-		<td align="left" style="border:hidden;">
-		<b>Block Hash:</b> {{ ahash }}
-		</td><td style="border:hidden"></td></tr><tr>
-		<td align="left" style="border:hidden;">
-		<b>Fee:</b> {{ afee }}
-		</td><td style="border:hidden"></td></tr><tr>
-		<td align="left" style="border:hidden;">
-		<b>Reward:</b> {{ areward }}
-		</td><td style="border:hidden"></td></tr><tr>
-		<td align="left" style="border:hidden;overflow-wrap:break-word;">
-		<b>Operation:</b> {{ aoperation }}
-		</td><td style="border:hidden"></td></tr><tr>
-		<td align="left" style="border:hidden;">
-		<b>Openfield (first 1000 Characters):</b> {{ aopen }}
-		</td><td style="border:hidden"></td></tr></tbody></table>
+	<div class="container p-2">
+	<div class="container-fluid" style="font-size: 90%">
+		    <div class="row my-2">
+		        <div class="col-sm-3 border-bottom"><p class="text text-secondary pt-2">Block</p></div>
+		        <div class="col-sm-7 border-bottom"><p class="text-break pt-2"> {{ ablock }} </p></div>
+		    </div>
+		    <div class="row my-2">
+		        <div class="col-sm-3 border-bottom"><p class="text text-secondary pt-2">Block Hash</p></div>
+		        <div class="col-sm-7 border-bottom"><p class="text-break pt-2"> {{ ahash }} </p></div>
+		    </div>
+		    <div class="row my-2">
+		        <div class="col-sm-3 border-bottom"><p class="text text-secondary pt-2">Transaction ID</p></div>
+		        <div class="col-sm-7 border-bottom"><p class="text-break pt-2"> {{ atxid }} </p></div>
+		    </div>
+		    <div class="row my-2">
+		        <div class="col-sm-3 border-bottom"><p class="text text-secondary pt-2">Timestamp</p></div>
+		        <div class="col-sm-7 border-bottom"><p class="text-break pt-2"> {{ atime }} </p></div>
+		    </div>
+		    <div class="row my-2">
+		        <div class="col-sm-3 border-bottom"><p class="text text-secondary pt-2">Sender</p></div>
+		        <div class="col-sm-7 border-bottom"><p class="text-break pt-2"> {{ afrom }} </p></div>
+		    </div>
+		    <div class="row my-2">
+		        <div class="col-sm-3 border-bottom"><p class="text text-secondary pt-2">Recipient</p></div>
+		        <div class="col-sm-7 border-bottom"><p class="text-break pt-2"> {{ ato }} </p></div>
+		    </div>
+		    <div class="row my-2">
+		        <div class="col-sm-3 border-bottom"><p class="text text-secondary pt-2">Amount</p></div>
+		        <div class="col-sm-7 border-bottom"><p class="text-break pt-2"> {{ aamount }} </p></div>
+		    </div>
+		    <div class="row my-2">
+		        <div class="col-sm-3 border-bottom"><p class="text text-secondary pt-2">Operation</p></div>
+		        <div class="col-sm-7 border-bottom"><p class="text-break pt-2"> {{ aoperation }} </p></div>
+		    </div>
+		    <div class="row my-2">
+		        <div class="col-sm-3 border-bottom"><p class="text text-secondary pt-2">Openfield (first 1000 chars.)</p></div>
+		        <div class="col-sm-7 border-bottom"><p class="text-break pt-2"> {{ aopen }} </p></div>
+		    </div>
+		    <div class="row my-2">
+		        <div class="col-sm-3 border-bottom"><p class="text text-secondary pt-2">Fee</p></div>
+		        <div class="col-sm-7 border-bottom"><p class="text-break pt-2"> {{ afee }} </p></div>
+		    </div>
+		    <div class="row my-2">
+		        <div class="col-sm-3 border-bottom"><p class="text text-secondary pt-2">Reward</p></div>
+		        <div class="col-sm-7 border-bottom"><p class="text-break pt-2"> {{ areward }} </p></div>
+		    </div>
+	    <div class="row my-2 mb-5">
+	        <div class="col-sm-3 border-bottom"><p class="text text-secondary pt-2">Signature</p></div>
+	        <div class="col-sm-7 border-bottom"><p class="text-break pt-2"> {{ asig }} </p></div> 
+	    </div>
 	</div>
+	</div>
+
 {% endblock %}
