@@ -8,38 +8,38 @@
                 <h3>Bismuth Payment URL Creation Tool</h3>
                 <p>Creates a Bismuth payment URL</p>
                 <p style="font-size: 80%">For importing into a Bismuth wallet or sending to someone</p></center>
-                  <form class="form" method="post" action="/geturl">
-										<div class="form-group row">
-											<label class="control-label col-sm-2 col-form-label col-form-label-sm" for="address">Receiving address</label>
-											<div class="col-sm-10">
-												<input type="text" class="form-control" id="address" placeholder="Enter destination address" name="address" value="{{ my_add }}">
-											</div>
+								<form class="form" method="post" action="/geturl">
+									<div class="form-group row">
+										<label class="control-label col-sm-2 col-form-label col-form-label-sm" for="address">Receiving address</label>
+										<div class="col-sm-10">
+											<input type="text" class="form-control" id="address" placeholder="Enter destination address" name="address" value="{{ my_add }}">
 										</div>
-										<div class="form-group row">
-											<label class="control-label col-sm-2 col-form-label col-form-label-sm" for="amount">Amount</label>
-											<div class="col-sm-10">
-												<input type="text" class="form-control" id="amount" placeholder="Enter Bismuth amount" name="amount" value="{{ my_amount }}">
-											</div>
+									</div>
+									<div class="form-group row">
+										<label class="control-label col-sm-2 col-form-label col-form-label-sm" for="amount">Amount</label>
+										<div class="col-sm-10">
+											<input type="text" class="form-control" id="amount" placeholder="Bismuth amount" name="amount" value="{{ my_amount }}">
 										</div>
-										<div class="form-group row">
-											<label class="control-label col-sm-2 col-form-label col-form-label-sm" for="operation">Operation (optional)</label>
-											<div class="col-sm-10">
-												<input type="text" class="form-control" id="operation" placeholder="Enter optional operation, 30 Chars. max." name="operation" value="{{ my_op }}">
-											</div>
+									</div>
+									<div class="form-group row">
+										<label class="control-label col-sm-2 col-form-label col-form-label-sm" for="operation">Operation (optional)</label>
+										<div class="col-sm-10">
+											<input type="text" class="form-control" id="operation" placeholder="optional operation, 30 Chars. max." name="operation" value="{{ my_op }}">
 										</div>
-												<div class="form-group row">
-											<label class="control-label col-sm-2 col-form-label col-form-label-sm" for="message">Openfield (optional)</label>
-											<div class="col-sm-10">
-												<input type="textarea" class="form-control" id="message" placeholder="Enter optional message" name="message" value="{{ my_mess }}">
-											</div>
+									</div>
+											<div class="form-group row">
+										<label class="control-label col-sm-2 col-form-label col-form-label-sm" for="message">Openfield (optional)</label>
+										<div class="col-sm-10">
+											<textarea class="form-control" id="message" placeholder="optional message" name="message" rows="3">{{ my_mess }}</textarea>
 										</div>
-										<div class="form-group row">
-										<label class="control-label col-sm-2 col-form-label col-form-label-sm" for="operation">Create Payment URL</label>
-											<div class="col-sm-10">
-												<button type="submit" type="submit" id="Submit Query" name="Submit Query" class="btn btn-dark btn">Submit</button>
-											</div>
+									</div>
+									<div class="form-group row">
+									<label class="control-label col-sm-2 col-form-label col-form-label-sm" for="Submit Query">Create Payment URL</label>
+										<div class="col-sm-10">
+											<button type="submit" type="submit" id="Submit Query" name="Submit Query" class="btn btn-dark btn">Submit</button>
 										</div>
-									</form>
+									</div>
+								</form>
         </div>
         <div class="container">
 {{ starter|safe }}
