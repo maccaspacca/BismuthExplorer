@@ -1,54 +1,42 @@
-<body>
-	<nav class="navbar navbar-expand-sm bg-dark navbar-dark">
-	<div class="container">
-	<a class="navbar-brand" href="/">
-	<img src="static/final.png" width="40" height="40" alt="Logo"> Bismuth Explorer
-	</a>
-	<!-- 	<a class="navbar-brand" href="/">Bismuth Explorer</a> -->
-	<!-- Search form -->
-	<form class="form-inline" action="/search">
-		<input class="form-control mr-sm-2" id="quicksearch" type="text" name="quicksearch" placeholder="block, address or txid" aria-label="Search">
-		<button class="btn-outline-dark btn-sm" type="submit">Search</button>
-	</form>
-	<ul class="navbar-nav">
-	<li class="nav-item">
-	  <a class="nav-link text-light" href="/">Home</a>
-	</li>
-	<li class="nav-item">
-	  <a class="nav-link text-light" href="/ledgerquery">Ledger Query</a>
-	</li>
-    <li class="nav-item dropdown">
-      <a class="nav-link dropdown-toggle text-light" href="#" id="navbardrop" data-toggle="dropdown">
-        Info
-      </a>
-      <div class="dropdown-menu">
-        <a class="dropdown-item" href="/minerquery">Miner Stats</a>
-        <a class="dropdown-item" href="/richest">Richlist</a>
-		<a class="dropdown-item" href="/wservers">Active Wallet Servers</a>
-		<a class="dropdown-item" href="/apihelp">API</a>
-       </div>
-    </li>
-    <li class="nav-item dropdown">
-      <a class="nav-link dropdown-toggle text-light" href="#" id="navbardrop" data-toggle="dropdown">
-        Charts
-      </a>
-      <div class="dropdown-menu">
-        <a class="dropdown-item" href="/diff_chart">Difficulty</a>
-        <a class="dropdown-item" href="/time_chart">Blocktime</a>
-       </div>
-    </li>
-    <li class="nav-item dropdown">
-      <a class="nav-link dropdown-toggle text-light" href="#" id="navbardrop" data-toggle="dropdown">
-        Tools
-      </a>
-      <div class="dropdown-menu">
-        <a class="dropdown-item" href="/geturl">Create Payment URL</a>
-        <a class="dropdown-item" href="/realmem">Realtime Mempool</a>
-      </div>
-    </li>
-    <li class="nav-item">
-	<a class="nav-link text-light" href="/tokens">Tokens</a>
-    </li>
-	</ul>
-	</div>
-	</nav>
+<nav class="navbar navbar-expand-md navbar-dark bg-dark">
+  <a class="navbar-brand keychainify-checked" href="/"> <img src="static/final.png" width="40" height="40" alt="Bismuth Blockchain Explorer">Bismuth Explorer</a>
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarsExample04" aria-controls="navbarsExample04" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+
+  <div class="collapse navbar-collapse" id="navbarsExample04">
+    <ul class="navbar-nav mr-auto">
+      <li class="nav-item">
+        <a class="nav-link keychainify-checked" href="/ledgerquery">Ledger</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link keychainify-checked" href="/tokens">Tokens</a>
+      </li>
+      <li class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle keychainify-checked" href="#" id="dropdown04" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Info</a>
+        <div class="dropdown-menu" aria-labelledby="dropdown04">
+          <a class="dropdown-item keychainify-checked" href="/minerquery">Miner Stats</a>
+          <a class="dropdown-item keychainify-checked" href="/richest">Richlist</a>
+          <a class="dropdown-item keychainify-checked" href="/wservers">Active Wallet Servers</a>
+          <a class="dropdown-item keychainify-checked" href="/apihelp">API</a>
+        </div>
+      </li>
+      <li class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle keychainify-checked" href="#" id="dropdown04" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Charts</a>
+        <div class="dropdown-menu" aria-labelledby="dropdown04">
+          <a class="dropdown-item keychainify-checked" href="/diff_chart">Difficulty</a>
+          <a class="dropdown-item keychainify-checked" href="/time_chart">Blocktime</a>
+        </div>
+      </li>
+      <li class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle keychainify-checked" href="#" id="dropdown04" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Tools</a>
+        <div class="dropdown-menu" aria-labelledby="dropdown04">
+          <a class="dropdown-item keychainify-checked" href="/geturl">Create Payment URL</a>
+          <a class="dropdown-item keychainify-checked" href="/realmem">Mempool</a>
+        </div>
+      </li>
+    </ul>
+  <form class="form-inline my-2 my-md-0" action="/search" style="width:100%">
+      <input class="form-control" id="quicksearch" type="text" name="quicksearch" placeholder="Search Address, Block, TX ID" aria-label="Search" style="width:100%">
+  </form>
+</nav>

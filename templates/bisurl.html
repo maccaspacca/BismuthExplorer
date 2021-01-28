@@ -3,22 +3,45 @@
 {% block content %}
 </head>
 {% include 'nav.html' %}
-	<div class="container">
-		<center><p></p>
-		<h3>Bismuth Payment URL Creation Tool</h3>
-		<p>Creates a Bismuth payment URL</p>
-		<p style="font-size: 80%">For importing into a Bismuth wallet or sending to someone</p></center>
-		<form method="post" action="/geturl">
-		<table style="font-size: 80%" class="table table-sm">
-		<tr><th><label for="address">Receiving address</label></th><td><input type="text" id="address" name="address" size="68" value={{ my_add }}></input></td></tr>
-		<tr><th><label for="amount">Amount</label></th><td><input type="text" id="amount" name="amount" size="50" value={{ my_amount }}></input><b> BIS</b></td></tr>
-		<tr><th><label for="operation">Operation text (optional)</label></th><td><input type="text" id="operation" name="operation" size="50" value={{ my_op }}></input> 30 Chars. max.</td></tr>
-		<tr><th><label for="message">Message text (optional)</label></th><td><textarea name="message" id="message" rows="3" cols="51">{{ my_mess }}</textarea></td></tr>
-		<tr><th><label for="Submit Query">Click Submit to create payment URL</label></th><td><button type="submit" class="btn btn-outline-dark btn-sm" id="Submit Query" name="Submit Query">Submit</button></td></tr>
-		</table>
-		</form>
-	</div>
-	<div class="container">
+        <div class="container">
+                <center><p></p>
+                <h3>Bismuth Payment URL Creation Tool</h3>
+                <p>Creates a Bismuth payment URL</p>
+                <p style="font-size: 80%">For importing into a Bismuth wallet or sending to someone</p></center>
+								<form class="form" method="post" action="/geturl">
+									<div class="form-group row">
+										<label class="control-label col-sm-2 col-form-label col-form-label-sm" for="address">Receiving address</label>
+										<div class="col-sm-10">
+											<input type="text" class="form-control" id="address" placeholder="Enter destination address" name="address" value="{{ my_add }}">
+										</div>
+									</div>
+									<div class="form-group row">
+										<label class="control-label col-sm-2 col-form-label col-form-label-sm" for="amount">Amount</label>
+										<div class="col-sm-10">
+											<input type="text" class="form-control" id="amount" placeholder="Bismuth amount" name="amount" value="{{ my_amount }}">
+										</div>
+									</div>
+									<div class="form-group row">
+										<label class="control-label col-sm-2 col-form-label col-form-label-sm" for="operation">Operation (optional)</label>
+										<div class="col-sm-10">
+											<input type="text" class="form-control" id="operation" placeholder="optional operation, 30 Chars. max." name="operation" value="{{ my_op }}">
+										</div>
+									</div>
+											<div class="form-group row">
+										<label class="control-label col-sm-2 col-form-label col-form-label-sm" for="message">Openfield (optional)</label>
+										<div class="col-sm-10">
+											<textarea class="form-control" id="message" placeholder="optional message" name="message" rows="3">{{ my_mess }}</textarea>
+										</div>
+									</div>
+									<div class="form-group row">
+									<label class="control-label col-sm-2 col-form-label col-form-label-sm" for="Submit Query">Create Payment URL</label>
+										<div class="col-sm-10">
+											<button type="submit" type="submit" id="Submit Query" name="Submit Query" class="btn btn-dark btn">Submit</button>
+										</div>
+									</div>
+								</form>
+        </div>
+        <div class="container">
 {{ starter|safe }}
-	</div>
+        </div>
 {% endblock %}

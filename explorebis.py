@@ -1064,8 +1064,8 @@ def detailinfo():
 		if m_detail:
 		
 			d_block = str(m_detail[0])
-			#d_time = str(time.strftime("%H:%M:%S, %d/%m/%Y", time.gmtime(float(m_detail[1]))))
-			d_time = str(m_detail[1])
+			d_time = str(time.strftime("%H:%M:%S, %d/%m/%Y", time.gmtime(float(m_detail[1]))))
+			#d_time = str(m_detail[1])
 			d_from = str(m_detail[2])
 			d_to = str(m_detail[3])
 			d_amount = str(m_detail[4])

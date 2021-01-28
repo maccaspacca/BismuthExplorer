@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <script type="text/javascript" src="//code.jquery.com/jquery-1.4.2.min.js"></script>
-    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.5/socket.io.min.js"></script>
-	<script src='static/Chart.min.js'></script>	
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.5/socket.io.js"></script>
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.min.js"></script>
 </head>
 {% include 'nav.html' %}
 
@@ -27,7 +27,7 @@
     <script>
       // Global parameters:
       // do not resize the chart canvas when its container does (keep at 600x400px)
-      Chart.defaults.global.responsive = false;
+      Chart.defaults.global.responsive = true;
 
       // define the chart data
       var chartData = {
