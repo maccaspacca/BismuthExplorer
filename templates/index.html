@@ -2,26 +2,6 @@
 
 {% block content %}
 <script type="text/javascript" src="https://cdn.socket.io/4.4.0/socket.io.min.js" integrity="sha384-1fOn6VtTq3PWwfsOrk45LnYcGosJwzMHv+Xh/Jx5303FVOXzEnw0EpLv30mtjmlj" crossorigin="anonymous"></script>
-<script type="text/javascript" charset="utf-8">
-		$(document).ready(function(){
-		  $('[data-toggle="popover"]').popover();
-		});
-	</script>
-	<script type="text/javascript" charset="utf-8">
-		$(document).ready(function(){
-		  $('[data-toggle="tooltip"]').tooltip();
-		});
-	</script>
-	<script type="text/javascript" charset="utf-8">
-	function copyToClipboard(text){
-		var dummy = document.createElement("input");
-		document.body.appendChild(dummy);
-		dummy.setAttribute('value', text);
-		dummy.select();
-		document.execCommand("copy");
-		document.body.removeChild(dummy);
-	}
-	</script>
     <script type="text/javascript" charset="utf-8">
         $(document).ready(function() {
             // Use a "/test" namespace.

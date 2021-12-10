@@ -527,12 +527,14 @@ def rich_html(a,c):
 		else:
 			rank = str(i)
 			address = r[0]
+			address_d = "{}....{}".format(address[:5],address[-5:]) # abbreviated address
 			alias = r[2]
 			bal_bis = "{:.8f}".format(r[1])
 			bal_curr = "{:.2f}".format(r[1]*c)
 		
 		send_back = send_back + '<tr><th scope="row"> {} </th>\n'.format(rank)
-		send_back = send_back + '<td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>'.format(address,alias,bal_bis,bal_curr)
+		# send_back = send_back + '<td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>'.format(address,alias,bal_bis,bal_curr)
+		send_back = send_back + '<td><span data-toggle="tooltip" title="{} : Left Click to Copy" onclick="copyToClipboard(&quot;{}&quot;)">{}</span></td><td>{}</td><td>{}</td><td>{}</td></tr>'.format(address,address,address_d,alias,bal_bis,bal_curr)
 		i +=1
 
 	return send_back

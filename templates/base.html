@@ -12,6 +12,27 @@
 	<link rel="stylesheet" type="text/css" href="static/custom.css">
 	<title>Bismuth Blockchain Explorer</title>
 	
+	<script type="text/javascript" charset="utf-8">
+		$(document).ready(function(){
+		  $('[data-toggle="popover"]').popover();
+		});
+	</script>
+	<script type="text/javascript" charset="utf-8">
+		$(document).ready(function(){
+		  $('[data-toggle="tooltip"]').tooltip();
+		});
+	</script>
+	<script type="text/javascript" charset="utf-8">
+	function copyToClipboard(text){
+		var dummy = document.createElement("input");
+		document.body.appendChild(dummy);
+		dummy.setAttribute('value', text);
+		dummy.select();
+		document.execCommand("copy");
+		document.body.removeChild(dummy);
+	}
+	</script>
+
 	{% block content %}{% endblock %}
 	
 	<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
