@@ -1135,9 +1135,12 @@ def tokens():
 	
 	for t in token_list:
 
-		token_address_tx = t[4]
-		token_address_tx_d = "{}....{}".format(token_address_tx[:5],token_address_tx[-5:]) # abbreviated address
-	
+		token_address_tx = t[4] #added short token tx address 2021-12-21
+		token_address_tx_d = "{}....{}".format(token_address_tx[:5],token_address_tx[-5:]) #added short token tx address 2021-12-21
+
+		token_txid = t[5] #added short token txid 2021-12-21
+		token_txid_d = "{}....{}".format(token_txid[:5],token_txid[-5:]) #added short token txid 2021-12-21
+
 		tview.append('<tr>')
 
 		tview.append("<td><b><a href='/tokenquery?token={}'>{}</a><b></td>".format(str(t[2]),str(t[2])))
@@ -1145,7 +1148,8 @@ def tokens():
 		tview.append("<td><a href='tokentxquery?address={}'>{}</a></td>".format(str(token_address_tx),str(token_address_tx_d)))
 		tview.append('<td>{}</td>'.format(str(t[6])))
 		tview.append('<td>{}</td>'.format(str(t[0])))
-		tview.append('<td>{}</td>'.format(str(t[5])))
+		#tview.append('<td>{}</td>'.format(str(t[5])))
+		tview.append("<td><span data-toggle='tooltip' title='{0} : Left Click to Copy' onclick='copyToClipboard(&quot;{0}&quot;)'>{1}</span></td>".format(str(token_txid),str(token_txid_d))) #added short token txid 2021-12-21
 		tview.append('<td>{}</td>'.format(str(time.strftime("%d/%m/%Y at %H:%M:%S", time.gmtime(float(t[1]))))))
 		tview.append('</tr>\n')
 		
