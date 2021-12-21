@@ -1134,11 +1134,15 @@ def tokens():
 	tview = []
 	
 	for t in token_list:
+
+		token_address_tx = t[4]
+		token_address_tx_d = "{}....{}".format(token_address_tx[:5],token_address_tx[-5:]) # abbreviated address
 	
 		tview.append('<tr>')
 
 		tview.append("<td><b><a href='/tokenquery?token={}'>{}</a><b></td>".format(str(t[2]),str(t[2])))
-		tview.append("<td><a href='tokentxquery?address={}'>{}</a></td>".format(str(t[4]),str(t[4])))
+		#tview.append("<td><a href='tokentxquery?address={}'>{}</a></td>".format(str(t[4]),str(t[4])))
+		tview.append("<td><a href='tokentxquery?address={}'>{}</a></td>".format(str(token_address_tx),str(token_address_tx_d)))
 		tview.append('<td>{}</td>'.format(str(t[6])))
 		tview.append('<td>{}</td>'.format(str(t[0])))
 		tview.append('<td>{}</td>'.format(str(t[5])))
