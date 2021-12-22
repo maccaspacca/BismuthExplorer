@@ -1135,11 +1135,11 @@ def tokens():
 	
 	for t in token_list:
 
-		token_address_tx = t[4] #added short token tx address 2021-12-21
-		token_address_tx_d = "{}....{}".format(token_address_tx[:5],token_address_tx[-5:]) #added short token tx address 2021-12-21
+		token_address_tx = t[4] #short token tx address 2021-12-21
+		token_address_tx_d = "{}....{}".format(token_address_tx[:5],token_address_tx[-5:]) #short token tx address 2021-12-21
 
-		token_txid = t[5] #added short token txid 2021-12-21
-		token_txid_d = "{}....{}".format(token_txid[:5],token_txid[-5:]) #added short token txid 2021-12-21
+		token_txid = t[5] #short token txid 2021-12-21
+		token_txid_d = "{}....{}".format(token_txid[:5],token_txid[-5:]) #short token txid 2021-12-21
 
 		tview.append('<tr>')
 
@@ -1260,6 +1260,12 @@ def tokentxquery():
 			txcolor = "#008000"
 			dude = t[6]
 		
+		tokentxquery_from = t[3] #short txquery list from
+		tokentxquery_from_d = "{}....{}".format(tokentxquery_from[:5],tokentxquery_from[-5:]) #short txquery list from
+
+		tokentxquery_to = t[4] #short txquery list to
+		tokentxquery_to_d = "{}....{}".format(tokentxquery_to[:5],tokentxquery_to[-5:]) #short txquery list to
+		
 		tview.append('<tr>')
 
 		tview.append("<td><b><a href='tokenquery?token={}'>{}</a><b></td>".format(str(t[2]),str(t[2])))
@@ -1268,8 +1274,8 @@ def tokentxquery():
 		if str(t[3]) == "issued":
 			tview.append("<td>{}</td>".format(str(t[3])))
 		else:
-			tview.append("<td><a href='tokentxquery?address={}'>{}</a></td>".format(str(t[3]),str(t[3])))
-		tview.append("<td><a href='tokentxquery?address={}'>{}</a></td>".format(str(t[4]),str(t[4])))
+			tview.append("<td><a href='tokentxquery?address={}'>{}</a></td>".format(str(tokentxquery_from),str(tokentxquery_from_d)))
+		tview.append("<td><a href='tokentxquery?address={}'>{}</a></td>".format(str(tokentxquery_to),str(tokentxquery_to_d)))
 		tview.append('<td style="color:{}">{}</td>'.format(txcolor,str(dude)))
 		tview.append('</tr>\n')
 		
