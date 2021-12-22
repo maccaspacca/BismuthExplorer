@@ -762,6 +762,10 @@ def ledger_query():
 			det_str = det_str.replace("<","&lt;")
 			det_str = det_str.replace(">","&gt;")
 			det_link = "/details?mydetail={}&myaddress={}".format(det_str,str(x[2]))
+			tx_address_from = x[2] #short from address
+			tx_address_from_d = "{}....{}".format(tx_address_from[:5],tx_address_from[-5:]) #short from address
+			tx_address_to = x[3] #short to address
+			tx_address_to_d = "{}....{}".format(tx_address_to[:5],tx_address_to[-5:]) #short to address
 			view.append('<tr>')
 
 			if x[0] < 0:
@@ -769,8 +773,10 @@ def ledger_query():
 			else:
 				view.append('<td><a href="{}">{}</a></td>'.format(det_link,str(x[0])))
 			view.append('<td>{}'.format(str(time.strftime("%Y/%m/%d,%H:%M:%S", time.gmtime(float(x[1]))))))
-			view.append('<td>{}</td>'.format(str(x[2])))
-			view.append('<td>{}</td>'.format(str(x[3])))
+			#view.append('<td>{}</td>'.format(str(x[2])))
+			view.append("<td><a href='search?quicksearch={}'>{}</a></td>".format(str(tx_address_from),str(tx_address_from_d))) #short from address
+			#view.append('<td>{}</td>'.format(str(x[3])))
+			view.append("<td><a href='search?quicksearch={}'>{}</a></td>".format(str(tx_address_to),str(tx_address_to_d))) #short to address
 			view.append('<td>{}</td>'.format(str(x[4])))
 			view.append('<td>{}</td>'.format(str(x[5][:56])))
 			view.append('<td>{}</td>'.format(str(x[8])))
@@ -1436,6 +1442,10 @@ def search_result():
 				det_str = det_str.replace("<","&lt;")
 				det_str = det_str.replace(">","&gt;")
 				det_link = "/details?mydetail={}&myaddress={}".format(det_str,str(x[2]))
+				tx_address_from = x[2] #short from address
+				tx_address_from_d = "{}....{}".format(tx_address_from[:5],tx_address_from[-5:]) #short from address
+				tx_address_to = x[3] #short to address
+				tx_address_to_d = "{}....{}".format(tx_address_to[:5],tx_address_to[-5:]) #short to address
 				view.append('<tr>')
 
 				if x[0] < 0:
@@ -1443,8 +1453,10 @@ def search_result():
 				else:
 					view.append('<td><a href="{}">{}</a></td>'.format(det_link,str(x[0])))
 				view.append('<td>{}'.format(str(time.strftime("%Y/%m/%d,%H:%M:%S", time.gmtime(float(x[1]))))))
-				view.append('<td>{}</td>'.format(str(x[2])))
-				view.append('<td>{}</td>'.format(str(x[3])))
+				#view.append('<td>{}</td>'.format(str(x[2])))
+				view.append("<td><a href='search?quicksearch={}'>{}</a></td>".format(str(tx_address_from),str(tx_address_from_d))) #short from address
+				#view.append('<td>{}</td>'.format(str(x[3])))
+				view.append("<td><a href='search?quicksearch={}'>{}</a></td>".format(str(tx_address_to),str(tx_address_to_d))) #short to address
 				view.append('<td>{}</td>'.format(str(x[4])))
 				view.append('<td>{}</td>'.format(str(x[5][:56])))
 				view.append('<td>{}</td>'.format(str(x[8])))
