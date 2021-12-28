@@ -766,6 +766,7 @@ def ledger_query():
 			tx_address_from_d = "{}....{}".format(tx_address_from[:5],tx_address_from[-5:]) #short from address
 			tx_address_to = x[3] #short to address
 			tx_address_to_d = "{}....{}".format(tx_address_to[:5],tx_address_to[-5:]) #short to address
+			tx_id_d = "{}....{}".format(det_str[:5],det_str[-5:]) #short tx_id
 			view.append('<tr>')
 
 			if x[0] < 0:
@@ -778,7 +779,8 @@ def ledger_query():
 			#view.append('<td>{}</td>'.format(str(x[3])))
 			view.append("<td><a href='search?quicksearch={}'>{}</a></td>".format(str(tx_address_to),str(tx_address_to_d))) #short to address
 			view.append('<td>{}</td>'.format(str(x[4])))
-			view.append('<td>{}</td>'.format(str(x[5][:56])))
+			#view.append('<td>{}</td>'.format(str(x[5][:56])))
+			view.append('<td><a href="{}">{}</a></td>'.format(det_link,str(tx_id_d)))
 			view.append('<td>{}</td>'.format(str(x[8])))
 			view.append('<td>{}</td>'.format(str(x[9])))
 			view.append('<td>{}</td>'.format(str(x[10])))
@@ -1446,6 +1448,7 @@ def search_result():
 				tx_address_from_d = "{}....{}".format(tx_address_from[:5],tx_address_from[-5:]) #short from address
 				tx_address_to = x[3] #short to address
 				tx_address_to_d = "{}....{}".format(tx_address_to[:5],tx_address_to[-5:]) #short to address
+				tx_id_d = "{}....{}".format(det_str[:5],det_str[-5:]) #short tx_id
 				view.append('<tr>')
 
 				if x[0] < 0:
@@ -1458,7 +1461,8 @@ def search_result():
 				#view.append('<td>{}</td>'.format(str(x[3])))
 				view.append("<td><a href='search?quicksearch={}'>{}</a></td>".format(str(tx_address_to),str(tx_address_to_d))) #short to address
 				view.append('<td>{}</td>'.format(str(x[4])))
-				view.append('<td>{}</td>'.format(str(x[5][:56])))
+				#view.append('<td>{}</td>'.format(str(x[5][:56])))
+				view.append('<td><a href="{}">{}</a></td>'.format(det_link,str(tx_id_d))) #short tx_id
 				view.append('<td>{}</td>'.format(str(x[8])))
 				view.append('<td>{}</td>'.format(str(x[9])))
 				view.append('<td>{}</td>'.format(str(x[10])))
