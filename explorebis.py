@@ -247,7 +247,8 @@ def get_50():
 		if r[0] < 0:
 			txlist50 = txlist50 + '<tr><th scope="row"> {} </th>\n'.format(str(r[0]))
 		else:
-			txlist50 = txlist50 + '<tr><th scope="row"><a href="{}">{}</a></th>\n'.format(det_link,str(r[0]))
+			#txlist50 = txlist50 + '<tr><th scope="row"><a href="{}">{}</a></th>\n'.format(det_link,str(r[0]))
+			txlist50 = txlist50 + '<tr><th scope="row"><a href="search?quicksearch={}">{}</a></th>\n'.format(str(r[0]),str(r[0])) # block search
 		txlist50 = txlist50 + '<td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>'.format(tx_tm,a_from,a_to,str(float(r[4])),a_sig,str(float(r[8])),str(float(r[9])))
 
 	return txlist50
@@ -772,7 +773,8 @@ def ledger_query():
 			if x[0] < 0:
 				view.append('<td>{}</td>'.format(str(x[0])))
 			else:
-				view.append('<td><a href="{}">{}</a></td>'.format(det_link,str(x[0])))
+				#view.append('<td><a href="{}">{}</a></td>'.format(det_link,str(x[0])))
+				view.append("<td><a href='search?quicksearch={}'>{}</a></td>".format(str(x[0]),str(x[0]))) # link to block
 			view.append('<td>{}'.format(str(time.strftime("%Y/%m/%d,%H:%M:%S", time.gmtime(float(x[1]))))))
 			#view.append('<td>{}</td>'.format(str(x[2])))
 			view.append("<td><a href='search?quicksearch={}'>{}</a></td>".format(str(tx_address_from),str(tx_address_from_d))) #short from address
@@ -1454,7 +1456,8 @@ def search_result():
 				if x[0] < 0:
 					view.append('<td>{}</td>'.format(str(x[0])))
 				else:
-					view.append('<td><a href="{}">{}</a></td>'.format(det_link,str(x[0])))
+					#view.append('<td><a href="{}">{}</a></td>'.format(det_link,str(x[0])))
+					view.append("<td><a href='search?quicksearch={}'>{}</a></td>".format(str(x[0]),str(x[0]))) # link to block number
 				view.append('<td>{}'.format(str(time.strftime("%Y/%m/%d,%H:%M:%S", time.gmtime(float(x[1]))))))
 				#view.append('<td>{}</td>'.format(str(x[2])))
 				view.append("<td><a href='search?quicksearch={}'>{}</a></td>".format(str(tx_address_from),str(tx_address_from_d))) #short from address
