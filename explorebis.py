@@ -247,7 +247,8 @@ def get_50():
 		if r[0] < 0:
 			txlist50 = txlist50 + '<tr><th scope="row"> {} </th>\n'.format(str(r[0]))
 		else:
-			txlist50 = txlist50 + '<tr><th scope="row"><a href="{}">{}</a></th>\n'.format(det_link,str(r[0]))
+			#txlist50 = txlist50 + '<tr><th scope="row"><a href="{}">{}</a></th>\n'.format(det_link,str(r[0]))
+			txlist50 = txlist50 + '<tr><th scope="row"><a href="search?quicksearch={}">{}</a></th>\n'.format(str(r[0]),str(r[0])) # block search
 		txlist50 = txlist50 + '<td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>'.format(tx_tm,a_from,a_to,str(float(r[4])),a_sig,str(float(r[8])),str(float(r[9])))
 
 	return txlist50
@@ -527,12 +528,14 @@ def rich_html(a,c):
 		else:
 			rank = str(i)
 			address = r[0]
+			address_d = "{}....{}".format(address[:5],address[-5:]) # abbreviated address
 			alias = r[2]
 			bal_bis = "{:.8f}".format(r[1])
 			bal_curr = "{:.2f}".format(r[1]*c)
 		
 		send_back = send_back + '<tr><th scope="row"> {} </th>\n'.format(rank)
-		send_back = send_back + '<td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>'.format(address,alias,bal_bis,bal_curr)
+		# send_back = send_back + '<td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>'.format(address,alias,bal_bis,bal_curr)
+		send_back = send_back + '<td><span data-toggle="tooltip" title="{} : Left Click to Copy" onclick="copyToClipboard(&quot;{}&quot;)">{}</span></td><td>{}</td><td>{}</td><td>{}</td></tr>'.format(address,address,address_d,alias,bal_bis,bal_curr)
 		i +=1
 
 	return send_back
@@ -760,17 +763,26 @@ def ledger_query():
 			det_str = det_str.replace("<","&lt;")
 			det_str = det_str.replace(">","&gt;")
 			det_link = "/details?mydetail={}&myaddress={}".format(det_str,str(x[2]))
+			tx_address_from = x[2] #short from address
+			tx_address_from_d = "{}....{}".format(tx_address_from[:5],tx_address_from[-5:]) #short from address
+			tx_address_to = x[3] #short to address
+			tx_address_to_d = "{}....{}".format(tx_address_to[:5],tx_address_to[-5:]) #short to address
+			tx_id_d = "{}....{}".format(det_str[:5],det_str[-5:]) #short tx_id
 			view.append('<tr>')
 
 			if x[0] < 0:
 				view.append('<td>{}</td>'.format(str(x[0])))
 			else:
-				view.append('<td><a href="{}">{}</a></td>'.format(det_link,str(x[0])))
+				#view.append('<td><a href="{}">{}</a></td>'.format(det_link,str(x[0])))
+				view.append("<td><a href='search?quicksearch={}'>{}</a></td>".format(str(x[0]),str(x[0]))) # link to block
 			view.append('<td>{}'.format(str(time.strftime("%Y/%m/%d,%H:%M:%S", time.gmtime(float(x[1]))))))
-			view.append('<td>{}</td>'.format(str(x[2])))
-			view.append('<td>{}</td>'.format(str(x[3])))
+			#view.append('<td>{}</td>'.format(str(x[2])))
+			view.append("<td><a href='search?quicksearch={}'>{}</a></td>".format(str(tx_address_from),str(tx_address_from_d))) #short from address
+			#view.append('<td>{}</td>'.format(str(x[3])))
+			view.append("<td><a href='search?quicksearch={}'>{}</a></td>".format(str(tx_address_to),str(tx_address_to_d))) #short to address
 			view.append('<td>{}</td>'.format(str(x[4])))
-			view.append('<td>{}</td>'.format(str(x[5][:56])))
+			#view.append('<td>{}</td>'.format(str(x[5][:56])))
+			view.append('<td><a href="{}">{}</a></td>'.format(det_link,str(tx_id_d)))
 			view.append('<td>{}</td>'.format(str(x[8])))
 			view.append('<td>{}</td>'.format(str(x[9])))
 			view.append('<td>{}</td>'.format(str(x[10])))
@@ -1132,14 +1144,22 @@ def tokens():
 	tview = []
 	
 	for t in token_list:
-	
+
+		token_address_tx = t[4] #short token tx address 2021-12-21
+		token_address_tx_d = "{}....{}".format(token_address_tx[:5],token_address_tx[-5:]) #short token tx address 2021-12-21
+
+		token_txid = t[5] #short token txid 2021-12-21
+		token_txid_d = "{}....{}".format(token_txid[:5],token_txid[-5:]) #short token txid 2021-12-21
+
 		tview.append('<tr>')
 
 		tview.append("<td><b><a href='/tokenquery?token={}'>{}</a><b></td>".format(str(t[2]),str(t[2])))
-		tview.append("<td><a href='tokentxquery?address={}'>{}</a></td>".format(str(t[4]),str(t[4])))
+		#tview.append("<td><a href='tokentxquery?address={}'>{}</a></td>".format(str(t[4]),str(t[4])))
+		tview.append("<td><a href='tokentxquery?address={}'>{}</a></td>".format(str(token_address_tx),str(token_address_tx_d)))
 		tview.append('<td>{}</td>'.format(str(t[6])))
 		tview.append('<td>{}</td>'.format(str(t[0])))
-		tview.append('<td>{}</td>'.format(str(t[5])))
+		#tview.append('<td>{}</td>'.format(str(t[5])))
+		tview.append("<td><span data-toggle='tooltip' title='{0} : Left Click to Copy' onclick='copyToClipboard(&quot;{0}&quot;)'>{1}</span></td>".format(str(token_txid),str(token_txid_d))) #added short token txid 2021-12-21
 		tview.append('<td>{}</td>'.format(str(time.strftime("%d/%m/%Y at %H:%M:%S", time.gmtime(float(t[1]))))))
 		tview.append('</tr>\n')
 		
@@ -1250,6 +1270,12 @@ def tokentxquery():
 			txcolor = "#008000"
 			dude = t[6]
 		
+		tokentxquery_from = t[3] #short txquery list from
+		tokentxquery_from_d = "{}....{}".format(tokentxquery_from[:5],tokentxquery_from[-5:]) #short txquery list from
+
+		tokentxquery_to = t[4] #short txquery list to
+		tokentxquery_to_d = "{}....{}".format(tokentxquery_to[:5],tokentxquery_to[-5:]) #short txquery list to
+		
 		tview.append('<tr>')
 
 		tview.append("<td><b><a href='tokenquery?token={}'>{}</a><b></td>".format(str(t[2]),str(t[2])))
@@ -1258,8 +1284,8 @@ def tokentxquery():
 		if str(t[3]) == "issued":
 			tview.append("<td>{}</td>".format(str(t[3])))
 		else:
-			tview.append("<td><a href='tokentxquery?address={}'>{}</a></td>".format(str(t[3]),str(t[3])))
-		tview.append("<td><a href='tokentxquery?address={}'>{}</a></td>".format(str(t[4]),str(t[4])))
+			tview.append("<td><a href='tokentxquery?address={}'>{}</a></td>".format(str(tokentxquery_from),str(tokentxquery_from_d)))
+		tview.append("<td><a href='tokentxquery?address={}'>{}</a></td>".format(str(tokentxquery_to),str(tokentxquery_to_d)))
 		tview.append('<td style="color:{}">{}</td>'.format(txcolor,str(dude)))
 		tview.append('</tr>\n')
 		
@@ -1420,17 +1446,26 @@ def search_result():
 				det_str = det_str.replace("<","&lt;")
 				det_str = det_str.replace(">","&gt;")
 				det_link = "/details?mydetail={}&myaddress={}".format(det_str,str(x[2]))
+				tx_address_from = x[2] #short from address
+				tx_address_from_d = "{}....{}".format(tx_address_from[:5],tx_address_from[-5:]) #short from address
+				tx_address_to = x[3] #short to address
+				tx_address_to_d = "{}....{}".format(tx_address_to[:5],tx_address_to[-5:]) #short to address
+				tx_id_d = "{}....{}".format(det_str[:5],det_str[-5:]) #short tx_id
 				view.append('<tr>')
 
 				if x[0] < 0:
 					view.append('<td>{}</td>'.format(str(x[0])))
 				else:
-					view.append('<td><a href="{}">{}</a></td>'.format(det_link,str(x[0])))
+					#view.append('<td><a href="{}">{}</a></td>'.format(det_link,str(x[0])))
+					view.append("<td><a href='search?quicksearch={}'>{}</a></td>".format(str(x[0]),str(x[0]))) # link to block number
 				view.append('<td>{}'.format(str(time.strftime("%Y/%m/%d,%H:%M:%S", time.gmtime(float(x[1]))))))
-				view.append('<td>{}</td>'.format(str(x[2])))
-				view.append('<td>{}</td>'.format(str(x[3])))
+				#view.append('<td>{}</td>'.format(str(x[2])))
+				view.append("<td><a href='search?quicksearch={}'>{}</a></td>".format(str(tx_address_from),str(tx_address_from_d))) #short from address
+				#view.append('<td>{}</td>'.format(str(x[3])))
+				view.append("<td><a href='search?quicksearch={}'>{}</a></td>".format(str(tx_address_to),str(tx_address_to_d))) #short to address
 				view.append('<td>{}</td>'.format(str(x[4])))
-				view.append('<td>{}</td>'.format(str(x[5][:56])))
+				#view.append('<td>{}</td>'.format(str(x[5][:56])))
+				view.append('<td><a href="{}">{}</a></td>'.format(det_link,str(tx_id_d))) #short tx_id
 				view.append('<td>{}</td>'.format(str(x[8])))
 				view.append('<td>{}</td>'.format(str(x[9])))
 				view.append('<td>{}</td>'.format(str(x[10])))
